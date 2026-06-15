@@ -30,7 +30,6 @@ humantime = "2.1.0"
 json5 = "0.4.1"
 libc = "0.2.166"
 log = "0.4.22"
-pretty_assertions = "1.4.1"
 ratatui = { version = "0.26.3", features = ["serde", "macros"] }
 rusqlite = { version = "0.32.1", features = ["bundled", "chrono"] }
 serde = { version = "1.0.215", features = ["derive"] }
@@ -53,3 +52,6 @@ unicode-width = "0.1.14"
 
 [build-dependencies]
 vergen = { version = "8.3.2", features = [ "build", "git", "gitoxide", "cargo" ]}
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
