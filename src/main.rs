@@ -72,7 +72,7 @@ async fn tokio_main() -> Result<()> {
         };
         #[cfg(not(unix))]
         let tmp_dir = tempfile::tempdir()?;
-        let tmp_path = tmp_dir.into_path();
+        let tmp_path = tmp_dir.keep();
         let file_path = tmp_path.join("backup.sqlite");
         let store = store::sqlite::SQLiteStore::new(file_path.clone(), true)?;
         let mut app = App::new(args.clone(), store, false)?;
