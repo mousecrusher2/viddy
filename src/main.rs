@@ -26,7 +26,7 @@ use std::path::PathBuf;
 use chrono::Duration;
 use clap::Parser;
 use cli::Cli;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use directories::ProjectDirs;
 use store::Store;
 
@@ -36,8 +36,6 @@ use crate::{
 };
 
 async fn tokio_main() -> Result<()> {
-    initialize_logging()?;
-
     initialize_panic_handler()?;
 
     let args = Cli::parse();
@@ -90,12 +88,15 @@ async fn tokio_main() -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    if let Err(e) = tokio_main().await {
-        eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME"));
-        Err(e)
-    } else {
-        Ok(())
+fn main() -> Result<()> {
+    unsafe {
+        // Safety: The caller must ensure this is called in a single-threaded program.
+        initialize_logging()
+            .inspect_err(|e| eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME")))?;
     }
+    tokio::runtime::Runtime::new().unwrap().block_on(async {
+        tokio_main()
+            .await
+            .inspect_err(|e| eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME")))
+    })
 }

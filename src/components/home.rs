@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{
-    clock::Clock, command::Command, execution_result::ExecutionResult, help::Help,
-    history::History, interval::Interval, prompt::Prompt, status::Status, Component, Frame,
+    Component, Frame, clock::Clock, command::Command, execution_result::ExecutionResult,
+    help::Help, history::History, interval::Interval, prompt::Prompt, status::Status,
 };
 use crate::{
     action::{Action, DiffMode},

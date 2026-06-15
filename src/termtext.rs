@@ -1,12 +1,12 @@
 use std::{
-    fmt::{format, Display},
+    fmt::{Display, format},
     io::Read,
     iter,
 };
 
 use anstyle::{AnsiColor, Color, Effects, RgbColor, Style};
 use anstyle_parse::{DefaultCharAccumulator, ParamsIter, Parser, Perform};
-use color_eyre::owo_colors::{colors::Default, OwoColorize};
+use color_eyre::owo_colors::{OwoColorize, colors::Default};
 use derive_deref::{Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};

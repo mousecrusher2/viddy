@@ -1,10 +1,10 @@
 use color_eyre::Result;
 use std::{ops::Sub, sync::Arc};
 
-use dissimilar::{diff, Chunk};
+use dissimilar::{Chunk, diff};
 use tokio::{
     process::Command,
-    sync::{mpsc, watch, Mutex},
+    sync::{Mutex, mpsc, watch},
 };
 
 use crate::{
@@ -62,12 +62,11 @@ pub async fn run_executor<S: Store>(
             None
         };
 
-        if let Some((diff_add, diff_delete)) = diff {
-            if diff_add != 0 || diff_delete != 0 {
-                if let Err(e) = actions.send(Action::DiffDetected) {
-                    eprintln!("Failed to send diff detected: {:?}", e);
-                }
-            }
+        if let Some((diff_add, diff_delete)) = diff
+            && (diff_add != 0 || diff_delete != 0)
+            && let Err(e) = actions.send(Action::DiffDetected)
+        {
+            eprintln!("Failed to send diff detected: {:?}", e);
         }
 
         let record = Record {
@@ -140,12 +139,11 @@ pub async fn run_executor_precise<S: Store>(
             None
         };
 
-        if let Some((diff_add, diff_delete)) = diff {
-            if diff_add != 0 || diff_delete != 0 {
-                if let Err(e) = actions.send(Action::DiffDetected) {
-                    eprintln!("Failed to send diff detected: {:?}", e);
-                }
-            }
+        if let Some((diff_add, diff_delete)) = diff
+            && (diff_add != 0 || diff_delete != 0)
+            && let Err(e) = actions.send(Action::DiffDetected)
+        {
+            eprintln!("Failed to send diff detected: {:?}", e);
         }
 
         let record = Record {
@@ -173,11 +171,11 @@ pub async fn run_executor_precise<S: Store>(
 
         let interval = std::time::Duration::from_millis(interval);
 
-        if let Ok(elapsed_std) = elapased.to_std() {
-            if elapsed_std < interval {
-                let sleep_time = interval - elapsed_std;
-                tokio::time::sleep(sleep_time).await;
-            }
+        if let Ok(elapsed_std) = elapased.to_std()
+            && elapsed_std < interval
+        {
+            let sleep_time = interval - elapsed_std;
+            tokio::time::sleep(sleep_time).await;
         }
     }
 }

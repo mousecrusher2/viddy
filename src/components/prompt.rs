@@ -5,7 +5,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::UnboundedSender;
-use tui_input::{backend::crossterm::EventHandler, Input};
+use tui_input::{Input, backend::crossterm::EventHandler};
 
 use super::{Component, Frame};
 use crate::{

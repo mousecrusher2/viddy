@@ -3,8 +3,8 @@ use std::{fmt, string::ToString};
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyEvent, MouseEvent};
 use serde::{
-    de::{self, Deserializer, Visitor},
     Deserialize, Serialize,
+    de::{self, Deserializer, Visitor},
 };
 use strum::Display;
 

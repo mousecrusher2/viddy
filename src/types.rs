@@ -1,8 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use rusqlite::{
-    types::{FromSql, ToSql, ToSqlOutput},
     Result,
+    types::{FromSql, ToSql, ToSqlOutput},
 };
 use serde::{Deserialize, Serialize};
 

@@ -7,7 +7,7 @@ use ratatui::layout::Rect;
 use tracing::error;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{
-    self, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Layer,
+    self, Layer, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
 
 const VERSION_MESSAGE: &str = concat!(
@@ -49,15 +49,15 @@ pub fn initialize_panic_handler() -> Result<()> {
         .into_hooks();
     eyre_hook.install()?;
     std::panic::set_hook(Box::new(move |panic_info| {
-        if let Ok(mut t) = crate::tui::Tui::new() {
-            if let Err(r) = t.exit() {
-                error!("Unable to exit Terminal: {:?}", r);
-            }
+        if let Ok(mut t) = crate::tui::Tui::new()
+            && let Err(r) = t.exit()
+        {
+            error!("Unable to exit Terminal: {:?}", r);
         }
 
         #[cfg(not(debug_assertions))]
         {
-            use human_panic::{handle_dump, print_msg, Metadata};
+            use human_panic::{Metadata, handle_dump, print_msg};
             let meta = Metadata::new(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
                 .authors(env!("CARGO_PKG_AUTHORS").replace(':', ", "))
                 .homepage(env!("CARGO_PKG_HOMEPAGE"));
@@ -114,17 +114,22 @@ pub fn get_old_config_dir() -> PathBuf {
     }
 }
 
-pub fn initialize_logging() -> Result<()> {
+/// # Safety
+/// This function is safe to call in a single-threaded program.
+pub unsafe fn initialize_logging() -> Result<()> {
     let directory = get_data_dir();
     std::fs::create_dir_all(directory.clone())?;
     let log_path = directory.join(LOG_FILE);
     let log_file = std::fs::File::create(log_path)?;
-    std::env::set_var(
-        "RUST_LOG",
-        std::env::var("RUST_LOG")
-            .or_else(|_| std::env::var(LOG_ENV.clone()))
-            .unwrap_or_else(|_| format!("{}=info", env!("CARGO_CRATE_NAME"))),
-    );
+    unsafe {
+        // Safety: The caller must ensure this is called in a single-threaded program.
+        std::env::set_var(
+            "RUST_LOG",
+            std::env::var("RUST_LOG")
+                .or_else(|_| std::env::var(LOG_ENV.clone()))
+                .unwrap_or_else(|_| format!("{}=info", env!("CARGO_CRATE_NAME"))),
+        )
+    };
     let file_subscriber = tracing_subscriber::fmt::layer()
         .with_file(true)
         .with_line_number(true)

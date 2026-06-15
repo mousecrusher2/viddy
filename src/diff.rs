@@ -1,4 +1,4 @@
-use dissimilar::{diff, Chunk};
+use dissimilar::{Chunk, diff};
 use similar::{ChangeTag, TextDiff};
 
 use crate::termtext::Text;

@@ -7,8 +7,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use derive_deref::{Deref, DerefMut};
 use ratatui::style::{Color, Modifier, Style};
 use serde::{
-    de::{self, Deserializer, MapAccess, Visitor},
     Deserialize, Serialize,
+    de::{self, Deserializer, MapAccess, Visitor},
 };
 use serde_json::Value as JsonValue;
 
@@ -235,10 +235,10 @@ impl From<OldConfig> for Config {
         keybindings.insert(Mode::All, all_keybindings);
 
         let mut all_styles = HashMap::new();
-        if let Some(bg) = color.background {
-            if !bg.is_empty() {
-                all_styles.insert("background".to_string(), parse_style(&format!("on {}", bg)));
-            }
+        if let Some(bg) = color.background
+            && !bg.is_empty()
+        {
+            all_styles.insert("background".to_string(), parse_style(&format!("on {}", bg)));
         }
         styles.insert(Mode::All, all_styles);
 
@@ -426,8 +426,7 @@ pub fn parse_key_sequence(raw: &str) -> Result<Vec<KeyEvent>, String> {
     }
     let raw = if !raw.contains("><") {
         let raw = raw.strip_prefix('<').unwrap_or(raw);
-        let raw = raw.strip_prefix('>').unwrap_or(raw);
-        raw
+        raw.strip_prefix('>').unwrap_or(raw)
     } else {
         raw
     };

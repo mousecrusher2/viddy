@@ -9,7 +9,7 @@ use ratatui::{prelude::Rect, widgets::Block};
 use serde::{Deserialize, Serialize};
 use tokio::{
     runtime,
-    sync::{mpsc, Mutex},
+    sync::{Mutex, mpsc},
 };
 use tracing_subscriber::field::debug;
 
@@ -17,7 +17,7 @@ use crate::{
     action::{self, Action, DiffMode},
     bytes::normalize_stdout,
     cli::Cli,
-    components::{fps::FpsCounter, home::Home, Component},
+    components::{Component, fps::FpsCounter, home::Home},
     config::{Config, RuntimeConfig},
     diff::{diff_and_mark, diff_and_mark_delete},
     mode::Mode,
@@ -380,30 +380,24 @@ impl<S: Store> App<S> {
                                 );
                             } else {
                                 string = result.plain_text();
-                                if let Some(diff_mode) = self.diff_mode {
-                                    if let Some(previous_id) = record.previous_id {
-                                        let previous_record = self.store.get_record(previous_id)?;
-                                        if let Some(previous_record) = previous_record {
-                                            let previous_result = termtext::Converter::new(style)
-                                                .convert(&normalize_stdout(
-                                                    &previous_record.stdout,
-                                                ));
-                                            let previous_string = previous_result.plain_text();
-                                            if diff_mode == DiffMode::Add {
-                                                diff_and_mark(
-                                                    &string,
-                                                    &previous_string,
-                                                    &mut result,
-                                                );
-                                            } else if diff_mode == DiffMode::Delete {
-                                                result = previous_result;
-                                                diff_and_mark_delete(
-                                                    &string,
-                                                    &previous_string,
-                                                    &mut result,
-                                                );
-                                                string = previous_string; // Use previous string for search
-                                            }
+                                if let Some(diff_mode) = self.diff_mode
+                                    && let Some(previous_id) = record.previous_id
+                                {
+                                    let previous_record = self.store.get_record(previous_id)?;
+                                    if let Some(previous_record) = previous_record {
+                                        let previous_result = termtext::Converter::new(style)
+                                            .convert(&normalize_stdout(&previous_record.stdout));
+                                        let previous_string = previous_result.plain_text();
+                                        if diff_mode == DiffMode::Add {
+                                            diff_and_mark(&string, &previous_string, &mut result);
+                                        } else if diff_mode == DiffMode::Delete {
+                                            result = previous_result;
+                                            diff_and_mark_delete(
+                                                &string,
+                                                &previous_string,
+                                                &mut result,
+                                            );
+                                            string = previous_string; // Use previous string for search
                                         }
                                     }
                                 }
