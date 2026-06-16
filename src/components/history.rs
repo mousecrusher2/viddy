@@ -15,7 +15,7 @@ use ratatui::{prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
 use symbols::scrollbar;
 use tokio::sync::mpsc::UnboundedSender;
-use tui_widget_list::{List, ListState};
+use tui_widget_list::{ListBuilder, ListState, ListView};
 
 use super::{Component, Frame};
 use crate::{
@@ -258,7 +258,12 @@ impl Component for History {
             .iter()
             .map(|i| i.borrow().clone())
             .collect::<Vec<_>>();
-        let list = List::new(items).block(block);
+        let builder = ListBuilder::new(|context| {
+            let mut item = items[context.index].clone();
+            let height = item.get_height_and_set_context(context);
+            (item.clone(), height)
+        });
+        let list = ListView::new(builder, items.len()).block(block);
 
         f.render_stateful_widget(list, area, &mut self.state);
 

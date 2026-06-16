@@ -12,7 +12,7 @@ build = "build.rs"
 
 [dependencies]
 ansi-parser = "0.9.1"
-ansi-to-tui = "4.1.0"
+ansi-to-tui = "7.0.0"
 anstyle = "1.0.10"
 anstyle-parse = { version = "0.2.6", features = ["utf8"] }
 better-panic = "0.3.0"
@@ -20,7 +20,7 @@ chrono = "0.4.38"
 clap = { version = "4.5.21", features = ["derive", "cargo", "wrap_help", "unicode", "string", "unstable-styles"] }
 color-eyre = "0.6.3"
 config = "0.14.1"
-crossterm = { version = "0.27.0", features = ["serde", "event-stream"] }
+crossterm = { version = "0.28.1", features = ["serde", "event-stream", "libc"] }
 derive_deref = "1.1.1"
 directories = "5.0.1"
 dissimilar = "1.0.9"
@@ -30,7 +30,7 @@ humantime = "2.1.0"
 json5 = "0.4.1"
 libc = "0.2.166"
 log = "0.4.22"
-ratatui = { version = "0.26.3", features = ["serde", "macros"] }
+ratatui = { version = "0.29.0", features = ["serde", "macros"] }
 rusqlite = { version = "0.32.1", features = ["bundled", "chrono"] }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
@@ -46,8 +46,8 @@ toml = "0.8.19"
 tracing = "0.1.41"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
-tui-input = "0.9.0"
-tui-widget-list = "0.9.0"
+tui-input = "0.13.0"
+tui-widget-list = "0.13.3"
 unicode-width = "0.1.14"
 
 [build-dependencies]

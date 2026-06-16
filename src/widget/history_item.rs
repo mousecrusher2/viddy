@@ -1,6 +1,6 @@
 use chrono::{DateTime, Duration, Local};
 use ratatui::prelude::*;
-use tui_widget_list::{List, ListState, PreRender, PreRenderContext};
+use tui_widget_list::{ListBuildContext, ListState};
 
 use crate::{config::Config, types::ExecutionId};
 
@@ -51,8 +51,8 @@ impl HistoryItem {
     }
 }
 
-impl PreRender for HistoryItem {
-    fn pre_render(&mut self, context: &PreRenderContext) -> u16 {
+impl HistoryItem {
+    pub fn get_height_and_set_context(&mut self, context: &ListBuildContext) -> u16 {
         if context.is_selected {
             self.style = self.selector_style;
         };

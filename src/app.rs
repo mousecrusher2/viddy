@@ -5,7 +5,7 @@ use anstyle::{Color, RgbColor, Style};
 use chrono::Duration;
 use color_eyre::{eyre::Result, owo_colors::OwoColorize};
 use crossterm::event::{Event, KeyEvent, MouseEvent};
-use ratatui::{prelude::Rect, widgets::Block};
+use ratatui::{layout::Position, prelude::Rect, widgets::Block};
 use serde::{Deserialize, Serialize};
 use tokio::{
     runtime,
@@ -226,7 +226,7 @@ impl<S: Store> App<S> {
         }
 
         for component in self.components.iter_mut() {
-            component.init(tui.size()?)?;
+            component.init((Position::new(0, 0), tui.size()?).into())?;
         }
 
         loop {
@@ -312,7 +312,7 @@ impl<S: Store> App<S> {
                         tui.resize(Rect::new(0, 0, w, h))?;
                         tui.draw(|f| {
                             for component in self.components.iter_mut() {
-                                let r = component.draw(f, f.size());
+                                let r = component.draw(f, f.area());
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
@@ -324,7 +324,7 @@ impl<S: Store> App<S> {
                     Action::Render => {
                         tui.draw(|f| {
                             for component in self.components.iter_mut() {
-                                let r = component.draw(f, f.size());
+                                let r = component.draw(f, f.area());
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
