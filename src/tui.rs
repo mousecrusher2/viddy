@@ -193,15 +193,15 @@ impl Tui {
 
     pub fn exit(&mut self) -> Result<()> {
         self.stop()?;
+        self.flush()?;
+        if self.paste {
+            crossterm::execute!(io(), DisableBracketedPaste)?;
+        }
+        if self.mouse {
+            crossterm::execute!(io(), DisableMouseCapture)?;
+        }
+        crossterm::execute!(io(), LeaveAlternateScreen, cursor::Show)?;
         if crossterm::terminal::is_raw_mode_enabled()? {
-            self.flush()?;
-            if self.paste {
-                crossterm::execute!(io(), DisableBracketedPaste)?;
-            }
-            if self.mouse {
-                crossterm::execute!(io(), DisableMouseCapture)?;
-            }
-            crossterm::execute!(io(), LeaveAlternateScreen, cursor::Show)?;
             crossterm::terminal::disable_raw_mode()?;
         }
         Ok(())
@@ -239,11 +239,5 @@ impl Deref for Tui {
 impl DerefMut for Tui {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.terminal
-    }
-}
-
-impl Drop for Tui {
-    fn drop(&mut self) {
-        self.exit().unwrap();
     }
 }
