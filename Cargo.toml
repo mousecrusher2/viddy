@@ -48,7 +48,7 @@ tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
 tui-input = "0.15.3"
 tui-widget-list = "0.15.2"
-unicode-width = "0.2.0"
+unicode-segmentation = "1.13.3"
 
 [build-dependencies]
 vergen-gix = { version = "9.0.0", features = ["build", "cargo"] }

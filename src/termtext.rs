@@ -8,12 +8,13 @@ use anstyle::{AnsiColor, Color, Effects, RgbColor, Style};
 use anstyle_parse::{DefaultCharAccumulator, ParamsIter, Parser, Perform};
 use color_eyre::owo_colors::{OwoColorize, colors::Default};
 use derive_deref::{Deref, DerefMut};
+use ratatui::buffer::CellWidth;
 use serde::{Deserialize, Serialize};
-use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+use unicode_segmentation::UnicodeSegmentation as _;
 
 #[derive(Debug, Deref, DerefMut, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct Text {
-    #[serde(skip_serializing, skip_deserializing)]
+    #[serde(skip)]
     pub chars: Vec<Char>,
 }
 
@@ -44,7 +45,7 @@ impl Text {
         }
     }
 
-    fn add_char(&mut self, c: Char) {
+    pub fn add_char(&mut self, c: Char) {
         self.chars.push(c);
     }
 
@@ -89,19 +90,13 @@ impl std::fmt::Display for Text {
     }
 }
 
-impl UnicodeWidthStr for Text {
-    fn width(&self) -> usize {
+impl CellWidth for Text {
+    fn cell_width(&self) -> u16 {
         self.chars
             .iter()
-            .map(|c| c.width().unwrap_or_default())
-            .sum()
-    }
-
-    fn width_cjk(&self) -> usize {
-        self.chars
-            .iter()
-            .map(|c| c.width_cjk().unwrap_or_default())
-            .sum()
+            .map(|c| c.c)
+            .collect::<String>()
+            .cell_width()
     }
 }
 
@@ -124,7 +119,7 @@ impl Converter {
         self.style = self.original_style;
     }
 
-    pub fn convert(&mut self, text: &[u8]) -> Text {
+    pub fn convert(&self, text: &[u8]) -> Text {
         let mut statemachine = Parser::<DefaultCharAccumulator>::new();
         let mut performer = Converter::new(self.style);
 
@@ -267,16 +262,6 @@ impl std::fmt::Display for Char {
     }
 }
 
-impl UnicodeWidthChar for Char {
-    fn width(self) -> Option<usize> {
-        self.c.width()
-    }
-
-    fn width_cjk(self) -> Option<usize> {
-        self.c.width_cjk()
-    }
-}
-
 // Based on https://github.com/dandavison/delta/blob/f5b37173fe88a62e37208a9587a0ab4fec0ef107/src/ansi/iterator.rs#L173
 fn ansi_term_style_from_sgr_parameters(params: &mut ParamsIter<'_>) -> Style {
     let mut style = Style::new();
@@ -400,6 +385,10 @@ pub fn convert_to_anstyle_color(c: ratatui::style::Color) -> Color {
 mod test {
     use super::*;
 
+    fn chars(text: &Text) -> Vec<char> {
+        text.chars.iter().map(|c| c.c).collect()
+    }
+
     #[test]
     fn test_text() {
         let text = Text::new("Hello, world!");
@@ -413,6 +402,35 @@ mod test {
     }
 
     #[test]
+    fn test_text_new_keeps_chars_and_width_uses_graphemes() {
+        let text = Text::new("e\u{301}あ");
+
+        assert_eq!(chars(&text), vec!['e', '\u{301}', 'あ']);
+        assert_eq!(text.cell_width(), 3);
+    }
+
+    #[test]
+    fn test_convert_keeps_combining_chars_with_style() {
+        let converter = Converter::new(Style::new());
+        let result = converter.convert("\x1b[31me\u{301}\x1b[0m\n".as_bytes());
+        let red = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Red)));
+
+        assert_eq!(chars(&result), vec!['e', '\u{301}', '\n']);
+        assert_eq!(result.chars[0].style, red);
+        assert_eq!(result.chars[1].style, red);
+        assert_eq!(result.chars[2].style, Style::new());
+    }
+
+    #[test]
+    fn test_convert_keeps_zwj_sequence_as_chars() {
+        let converter = Converter::new(Style::new());
+        let result = converter.convert("a👩\u{200d}💻b".as_bytes());
+
+        assert_eq!(chars(&result), vec!['a', '👩', '\u{200d}', '💻', 'b']);
+        assert_eq!(result.cell_width(), 4);
+    }
+
+    #[test]
     fn test_convert() {
         // "\e[31mr\e[32mg\e[0m"
         // 00000000: 1b5b 3331 6d72 1b5b 3332 6d67 1b5b 306d  .[31mr.[32mg.[0m
@@ -421,7 +439,7 @@ mod test {
             0x1b, 0x5b, 0x33, 0x31, 0x6d, 0x72, 0x1b, 0x5b, 0x33, 0x32, 0x6d, 0x67, 0x1b, 0x5b,
             0x30, 0x6d, 0x0a,
         ];
-        let mut converter = Converter::new(Style::new());
+        let converter = Converter::new(Style::new());
         let result = converter.convert(&text);
 
         assert_eq!(
@@ -454,7 +472,7 @@ mod test {
             0x1b, 0x5b, 0x33, 0x34, 0x6d, 0x62, 0x1b, 0x5b, 0x33, 0x39, 0x6d, 0x64, 0x1b, 0x5b,
             0x30, 0x6d, 0x61, 0x0a,
         ];
-        let mut converter = Converter::new(Style::new());
+        let converter = Converter::new(Style::new());
         let result = converter.convert(&text);
 
         assert_eq!(
@@ -487,7 +505,7 @@ mod test {
         // echo "1\t2" | xxd
         // 00000000: 3109 320a                                1.2.
         let text: Vec<u8> = vec![0x31, 0x09, 0x32, 0x0a];
-        let mut converter = Converter::new(Style::new());
+        let converter = Converter::new(Style::new());
         let result = converter.convert(&text);
 
         assert_eq!(

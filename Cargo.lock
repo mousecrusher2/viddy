@@ -4110,7 +4110,7 @@ dependencies = [
  "tracing-subscriber",
  "tui-input",
  "tui-widget-list",
- "unicode-width",
+ "unicode-segmentation",
  "vergen-gix",
 ]
 

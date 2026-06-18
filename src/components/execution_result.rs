@@ -5,12 +5,12 @@ use ansi_to_tui::IntoText;
 use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{buffer::CellWidth as _, prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
 use symbols::scrollbar;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing_subscriber::field::debug;
-use unicode_width::UnicodeWidthStr;
+use unicode_segmentation::UnicodeSegmentation as _;
 
 use super::{Component, Frame};
 use crate::{
@@ -132,9 +132,9 @@ impl ExecutionResult {
 fn text_width(text: &Text) -> usize {
     text.lines()
         .into_iter()
-        .map(|l| l.width())
+        .map(|l| l.cell_width())
         .max()
-        .unwrap_or(0)
+        .unwrap_or(0) as usize
 }
 
 fn text_height(text: &Text) -> usize {
@@ -265,15 +265,20 @@ impl Component for ExecutionResult {
 }
 
 fn fold_text(str: &Text, width: usize) -> Text {
-    let mut result: Vec<Char> = Vec::new();
+    let mut result = Text::new("");
     let mut current = 0;
     let mut previous_style = anstyle::Style::default();
-    for char in str.chars.iter() {
-        let c = char.to_string();
-        if c == "\n" {
+    let unified_str = str.chars.iter().map(|c| c.c).collect::<String>();
+    let graphemes = unified_str.graphemes(true);
+    let mut cstyles = str.chars.iter().map(|c| c.style);
+    for g in graphemes {
+        if matches!(g, "\n" | "\r" | "\r\n" | "\u{000B}" | "\u{000C}") {
             current = 0;
-            result.push(*char);
-            previous_style = char.style;
+            for c in g.chars() {
+                let style = cstyles.next().unwrap();
+                result.add_char(Char { c, style });
+                previous_style = style;
+            }
             continue;
         }
 
@@ -282,26 +287,29 @@ fn fold_text(str: &Text, width: usize) -> Text {
                 c: '\n',
                 style: previous_style,
             };
-            result.push(char);
+            result.add_char(char);
 
             current = 0;
         }
 
-        if current + c.width() > width {
+        if current + g.cell_width() as usize > width {
             let char = Char {
                 c: '\n',
                 style: previous_style,
             };
-            result.push(char);
+            result.add_char(char);
             current = 0;
         }
 
-        result.push(*char);
-        previous_style = char.style;
-        current += c.width();
+        for c in g.chars() {
+            let style = cstyles.next().unwrap();
+            result.add_char(Char { c, style });
+            previous_style = style;
+        }
+        current += g.cell_width() as usize;
     }
 
-    Text { chars: result }
+    result
 }
 
 fn remove_ansi(text: &str) -> String {
@@ -357,6 +365,41 @@ use color_eyre::eyre::Result;
             result.to_string(),
             "iあいうえ\nおかきくけ\nこさしすせ\nそたちつて\nとなにぬね\nの"
         )
+    }
+
+    #[test]
+    fn test_fold_text_does_not_split_grapheme_clusters() {
+        let text = Text::new("e\u{301}e\u{301}");
+
+        let result = fold_text(&text, 1);
+
+        assert_eq!(result.to_string(), "e\u{301}\ne\u{301}");
+        assert_eq!(
+            result.chars.iter().map(|c| c.c).collect::<Vec<_>>(),
+            vec!['e', '\u{301}', '\n', 'e', '\u{301}']
+        );
+    }
+
+    #[test]
+    fn test_fold_text_resets_width_after_crlf() {
+        let text = Text::new("12\r\n345");
+
+        let result = fold_text(&text, 2);
+
+        assert_eq!(result.to_string(), "12\r\n34\n5");
+        assert_eq!(
+            result.chars.iter().map(|c| c.c).collect::<Vec<_>>(),
+            vec!['1', '2', '\r', '\n', '3', '4', '\n', '5']
+        );
+    }
+
+    #[test]
+    fn test_fold_text_resets_width_after_control_line_breaks() {
+        let text = Text::new("12\r34\u{000B}56\u{000C}78");
+
+        let result = fold_text(&text, 2);
+
+        assert_eq!(result.to_string(), "12\r34\u{000B}56\u{000C}78");
     }
 
     #[test]
