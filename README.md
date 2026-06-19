@@ -20,8 +20,10 @@ Notable changes in this fork include:
 
 * Terminal text handling tweaks, including grapheme-aware wrapping.
 * More reliable terminal cleanup on Windows.
+* Component initialization cleanup so configuration is loaded once and passed
+  through instead of reloaded by individual components.
 * Migration to Rust 2024 edition.
-* Routine dependency updates.
+* Routine dependency updates and dependency surface cleanup.
 
 ## Demo
 
