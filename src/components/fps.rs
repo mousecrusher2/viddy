@@ -35,7 +35,7 @@ impl FpsCounter {
         }
     }
 
-    fn app_tick(&mut self) -> Result<()> {
+    fn app_tick(&mut self) {
         self.app_frames += 1;
         let now = Instant::now();
         let elapsed = (now - self.app_start_time).as_secs_f64();
@@ -44,10 +44,9 @@ impl FpsCounter {
             self.app_start_time = now;
             self.app_frames = 0;
         }
-        Ok(())
     }
 
-    fn render_tick(&mut self) -> Result<()> {
+    fn render_tick(&mut self) {
         self.render_frames += 1;
         let now = Instant::now();
         let elapsed = (now - self.render_start_time).as_secs_f64();
@@ -56,19 +55,17 @@ impl FpsCounter {
             self.render_start_time = now;
             self.render_frames = 0;
         }
-        Ok(())
     }
 }
 
 impl Component for FpsCounter {
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         if let Action::Tick = action {
-            self.app_tick()?
+            self.app_tick()
         };
         if let Action::Render = action {
-            self.render_tick()?
+            self.render_tick()
         };
-        Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, rect: Rect) -> Result<()> {

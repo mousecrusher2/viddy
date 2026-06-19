@@ -1,6 +1,5 @@
 use color_eyre::eyre::Result;
 use ratatui::{prelude::*, widgets::*};
-use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
 use crate::{
@@ -9,7 +8,6 @@ use crate::{
 };
 
 pub struct Status {
-    command_tx: Option<UnboundedSender<Action>>,
     config: Config,
 
     is_fold: bool,
@@ -22,7 +20,6 @@ pub struct Status {
 impl Status {
     pub fn new(is_fold: bool, diff_mode: Option<DiffMode>, is_bell: bool, read_only: bool) -> Self {
         Self {
-            command_tx: None,
             config: Config::new().unwrap(),
             is_fold,
             diff_mode,
@@ -34,17 +31,11 @@ impl Status {
 }
 
 impl Component for Status {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
-        self.command_tx = Some(tx);
-        Ok(())
-    }
-
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config;
-        Ok(())
     }
 
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         match action {
             Action::SetFold(is_fold) => self.is_fold = is_fold,
             Action::SetDiff(diff_mode) => self.diff_mode = diff_mode,
@@ -52,7 +43,6 @@ impl Component for Status {
             Action::SetSuspend(is_suspend) => self.is_suspend = is_suspend,
             _ => {}
         }
-        Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

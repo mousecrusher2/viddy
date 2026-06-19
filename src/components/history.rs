@@ -49,17 +49,15 @@ impl History {
         }
     }
 
-    fn update_latest_history_count(&self) -> Result<()> {
+    fn update_latest_history_count(&self) {
         if let Some(latest_id) = self.latest_id
             && let Some(record) = self.index.get(&latest_id)
         {
             record.borrow_mut().update_same_count();
         }
-
-        Ok(())
     }
 
-    fn insert_history(&mut self, id: ExecutionId, start_time: DateTime<Local>) -> Result<()> {
+    fn insert_history(&mut self, id: ExecutionId, start_time: DateTime<Local>) {
         let item = Rc::new(RefCell::new(HistoryItem::new(
             id,
             start_time,
@@ -71,37 +69,27 @@ impl History {
         self.items.push_front(item);
         self.latest_id = Some(id);
         if self.timemachine_mode {
-            self.select(self.state.selected.map(|s| s + 1))?;
+            self.select(self.state.selected.map(|s| s + 1));
         }
-
-        Ok(())
     }
 
-    fn update_history_result(
-        &mut self,
-        id: ExecutionId,
-        diff: Option<(u32, u32)>,
-        exit_code: i32,
-    ) -> Result<()> {
+    fn update_history_result(&mut self, id: ExecutionId, diff: Option<(u32, u32)>, exit_code: i32) {
         if let Some(item) = self.index.get(&id) {
             item.borrow_mut().update_diff(diff, exit_code);
             if self.timemachine_mode && self.state.selected.is_none() {
-                self.select_latest()?;
+                self.select_latest();
             }
         }
-
-        Ok(())
     }
 
-    fn set_timemachine_mode(&mut self, timemachine_mode: bool) -> Result<()> {
+    fn set_timemachine_mode(&mut self, timemachine_mode: bool) {
         self.timemachine_mode = timemachine_mode;
         if self.timemachine_mode {
-            self.select_latest()?;
+            self.select_latest();
         }
-        Ok(())
     }
 
-    fn select_latest(&mut self) -> Result<()> {
+    fn select_latest(&mut self) {
         let index_to_select = self.items.iter().enumerate().find_map(|(i, item)| {
             let item = item.borrow();
             if !item.is_running { Some(i) } else { None }
@@ -110,7 +98,7 @@ impl History {
         self.select(index_to_select)
     }
 
-    fn select(&mut self, index: Option<usize>) -> Result<()> {
+    fn select(&mut self, index: Option<usize>) {
         if let Some(index) = index
             && let Some(history_item) = self.items.get(index)
         {
@@ -118,33 +106,37 @@ impl History {
             if !history_item.is_running {
                 self.state.select(Some(index));
 
-                if let Some(tx) = &self.command_tx {
-                    tx.send(Action::ShowExecution(history_item.id, history_item.id))?;
-                }
+                // if let Some(tx) = &self.command_tx {
+                //     tx.send(Action::ShowExecution(history_item.id, history_item.id))?;
+                // }
+                self.command_tx
+                    .as_ref()
+                    .expect("action sender should be registered")
+                    .send(Action::ShowExecution(history_item.id, history_item.id))
+                    .expect("action receiver should be alive");
             }
         }
-        Ok(())
     }
 
-    fn go_to_past(&mut self) -> Result<()> {
+    fn go_to_past(&mut self) {
         self.select_saturating_add(1)
     }
 
-    fn go_to_more_past(&mut self) -> Result<()> {
+    fn go_to_more_past(&mut self) {
         self.select_saturating_add(10)
     }
 
-    fn go_to_future(&mut self) -> Result<()> {
+    fn go_to_future(&mut self) {
         self.select_saturating_sub(1)
     }
 
-    fn go_to_more_future(&mut self) -> Result<()> {
+    fn go_to_more_future(&mut self) {
         self.select_saturating_sub(10)
     }
 
-    fn select_saturating_add(&mut self, n: usize) -> Result<()> {
+    fn select_saturating_add(&mut self, n: usize) {
         if !self.timemachine_mode {
-            return Ok(());
+            return;
         }
 
         let selected = self
@@ -152,86 +144,82 @@ impl History {
             .selected
             .map(|s| s.saturating_add(n).min(self.items.len() - 1));
         if selected.is_none() {
-            return Ok(());
+            return;
         }
 
         self.select(selected)
     }
 
-    fn select_saturating_sub(&mut self, n: usize) -> Result<()> {
+    fn select_saturating_sub(&mut self, n: usize) {
         if !self.timemachine_mode {
-            return Ok(());
+            return;
         }
 
         if self.state.selected.is_none() {
-            return Ok(());
+            return;
         }
 
         self.select(self.state.selected.map(|s| s.saturating_sub(n)))
     }
 
-    fn go_to_oldest(&mut self) -> Result<()> {
+    fn go_to_oldest(&mut self) {
         if !self.timemachine_mode {
-            return Ok(());
+            return;
         }
 
         self.select(self.items.len().checked_sub(1))
     }
 
-    fn go_to_current(&mut self) -> Result<()> {
+    fn go_to_current(&mut self) {
         if !self.timemachine_mode {
-            return Ok(());
+            return;
         }
 
         self.select_latest()
     }
 
-    fn handle_mouse_events(&mut self, event: MouseEvent) -> Result<()> {
+    fn handle_mouse_events(&mut self, event: MouseEvent) {
         log::debug!("Mouse event: {:?}", event);
         if !is_in_area(event.column, event.row, self.rect) {
-            return Ok(());
+            return;
         }
 
         match event.kind {
             MouseEventKind::ScrollDown => self.go_to_past(),
             MouseEventKind::ScrollUp => self.go_to_future(),
-            _ => Ok(()),
+            _ => (),
         }
     }
 }
 
 impl Component for History {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
+    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
         self.command_tx = Some(tx);
-        Ok(())
     }
 
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config;
-        Ok(())
     }
 
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         match action {
-            Action::InsertHistory(id, start_time) => self.insert_history(id, start_time)?,
+            Action::InsertHistory(id, start_time) => self.insert_history(id, start_time),
             Action::UpdateHistoryResult(id, diff, exit_code) => {
-                self.update_history_result(id, diff, exit_code)?
+                self.update_history_result(id, diff, exit_code)
             }
-            Action::UpdateLatestHistoryCount => self.update_latest_history_count()?,
-            Action::GoToPast => self.go_to_past()?,
-            Action::GoToFuture => self.go_to_future()?,
+            Action::UpdateLatestHistoryCount => self.update_latest_history_count(),
+            Action::GoToPast => self.go_to_past(),
+            Action::GoToFuture => self.go_to_future(),
             Action::SetTimemachineMode(timemachine_mode) => {
-                self.set_timemachine_mode(timemachine_mode)?
+                self.set_timemachine_mode(timemachine_mode)
             }
-            Action::GoToMoreFuture => self.go_to_more_future()?,
-            Action::GoToMorePast => self.go_to_more_past()?,
-            Action::GoToOldest => self.go_to_oldest()?,
-            Action::GoToCurrent => self.go_to_current()?,
-            Action::MouseEvent(e) => self.handle_mouse_events(e)?,
+            Action::GoToMoreFuture => self.go_to_more_future(),
+            Action::GoToMorePast => self.go_to_more_past(),
+            Action::GoToOldest => self.go_to_oldest(),
+            Action::GoToCurrent => self.go_to_current(),
+            Action::MouseEvent(e) => self.handle_mouse_events(e),
             _ => {}
         }
-
-        Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

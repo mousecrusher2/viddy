@@ -1,15 +1,10 @@
 use color_eyre::eyre::Result;
 use ratatui::{prelude::*, widgets::*};
-use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
-use crate::{
-    action::Action,
-    config::{Config, RuntimeConfig},
-};
+use crate::config::{Config, RuntimeConfig};
 
 pub struct Command {
-    command_tx: Option<UnboundedSender<Action>>,
     config: Config,
     runtime_config: RuntimeConfig,
 }
@@ -18,21 +13,14 @@ impl Command {
     pub fn new(runtime_config: RuntimeConfig) -> Self {
         Self {
             runtime_config,
-            command_tx: None,
             config: Config::new().unwrap(),
         }
     }
 }
 
 impl Component for Command {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
-        self.command_tx = Some(tx);
-        Ok(())
-    }
-
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config;
-        Ok(())
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

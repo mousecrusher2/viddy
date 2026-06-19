@@ -4,7 +4,7 @@ use anstyle::{Color, Style};
 use chrono::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::KeyEvent;
-use ratatui::{layout::Position, prelude::Rect};
+use ratatui::prelude::Rect;
 use tokio::sync::mpsc;
 
 use crate::{
@@ -212,15 +212,11 @@ impl<S: Store> App<S> {
         tui.enter()?;
 
         for component in self.components.iter_mut() {
-            component.register_action_handler(action_tx.clone())?;
+            component.register_action_handler(action_tx.clone());
         }
 
         for component in self.components.iter_mut() {
-            component.register_config_handler(self.config.clone())?;
-        }
-
-        for component in self.components.iter_mut() {
-            component.init((Position::new(0, 0), tui.size()?).into())?;
+            component.set_config(self.config.clone());
         }
 
         loop {
@@ -229,7 +225,6 @@ impl<S: Store> App<S> {
                     tui::Event::Mouse(me) => {
                         action_tx.send(Action::MouseEvent(me))?;
                     }
-                    tui::Event::Quit => action_tx.send(Action::Quit)?,
                     tui::Event::Tick => action_tx.send(Action::Tick)?,
                     tui::Event::Render => action_tx.send(Action::Render)?,
                     tui::Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
@@ -255,12 +250,6 @@ impl<S: Store> App<S> {
                                 }
                             }
                         };
-                    }
-                    _ => {}
-                }
-                for component in self.components.iter_mut() {
-                    if let Some(action) = component.handle_events(Some(e.clone()))? {
-                        action_tx.send(action)?;
                     }
                 }
             }
@@ -498,9 +487,7 @@ impl<S: Store> App<S> {
                     _ => {}
                 }
                 for component in self.components.iter_mut() {
-                    if let Some(action) = component.update(action.clone())? {
-                        action_tx.send(action)?
-                    };
+                    component.update(action.clone())
                 }
             }
 

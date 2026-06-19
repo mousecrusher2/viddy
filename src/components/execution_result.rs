@@ -3,7 +3,6 @@ use color_eyre::eyre::Result;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::{buffer::CellWidth as _, prelude::*, widgets::*};
 use symbols::scrollbar;
-use tokio::sync::mpsc::UnboundedSender;
 use unicode_segmentation::UnicodeSegmentation as _;
 
 use super::{Component, Frame};
@@ -15,7 +14,6 @@ use crate::{
 };
 
 pub struct ExecutionResult {
-    command_tx: Option<UnboundedSender<Action>>,
     config: Config,
 
     result: Option<Text>,
@@ -34,7 +32,6 @@ pub struct ExecutionResult {
 impl ExecutionResult {
     pub fn new(fold: bool) -> Self {
         Self {
-            command_tx: None,
             config: Config::new().unwrap(),
             result: None,
             x_state: ScrollbarState::default(),
@@ -134,17 +131,11 @@ fn text_height(text: &Text) -> usize {
 }
 
 impl Component for ExecutionResult {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
-        self.command_tx = Some(tx);
-        Ok(())
-    }
-
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config;
-        Ok(())
     }
 
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         match action {
             Action::SetResult(result) => self.set_result(result),
             Action::ResultScrollDown => self.scroll_down(),
@@ -161,7 +152,6 @@ impl Component for ExecutionResult {
             Action::MouseEvent(e) => self.handle_mouse_events(e),
             _ => {}
         }
-        Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

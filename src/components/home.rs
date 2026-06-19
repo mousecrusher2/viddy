@@ -13,7 +13,6 @@ use crate::{
 };
 
 pub struct Home {
-    command_tx: Option<UnboundedSender<Action>>,
     config: Config,
     is_no_title: bool,
 
@@ -42,7 +41,6 @@ impl Home {
         timemachine_mode: bool,
     ) -> Self {
         Self {
-            command_tx: None,
             config: config.clone(),
             is_no_title,
             mode: Default::default(),
@@ -68,47 +66,32 @@ impl Home {
 }
 
 impl Component for Home {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
-        self.command_tx = Some(tx.clone());
-
-        self.command_component.register_action_handler(tx.clone())?;
-        self.interval_component
-            .register_action_handler(tx.clone())?;
-        self.clock_component.register_action_handler(tx.clone())?;
+    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
+        self.command_component.register_action_handler(tx.clone());
+        self.interval_component.register_action_handler(tx.clone());
+        self.clock_component.register_action_handler(tx.clone());
         self.execution_result_component
-            .register_action_handler(tx.clone())?;
-        self.history_component.register_action_handler(tx.clone())?;
-        self.prompt_component.register_action_handler(tx.clone())?;
-        self.status_component.register_action_handler(tx.clone())?;
-        self.help_component.register_action_handler(tx.clone())?;
-
-        Ok(())
+            .register_action_handler(tx.clone());
+        self.history_component.register_action_handler(tx.clone());
+        self.prompt_component.register_action_handler(tx.clone());
+        self.status_component.register_action_handler(tx.clone());
+        self.help_component.register_action_handler(tx.clone());
     }
 
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config.clone();
 
-        self.command_component
-            .register_config_handler(config.clone())?;
-        self.interval_component
-            .register_config_handler(config.clone())?;
-        self.clock_component
-            .register_config_handler(config.clone())?;
-        self.execution_result_component
-            .register_config_handler(config.clone())?;
-        self.history_component
-            .register_config_handler(config.clone())?;
-        self.prompt_component
-            .register_config_handler(config.clone())?;
-        self.status_component
-            .register_config_handler(config.clone())?;
-        self.help_component
-            .register_config_handler(config.clone())?;
-
-        Ok(())
+        self.command_component.set_config(config.clone());
+        self.interval_component.set_config(config.clone());
+        self.clock_component.set_config(config.clone());
+        self.execution_result_component.set_config(config.clone());
+        self.history_component.set_config(config.clone());
+        self.prompt_component.set_config(config.clone());
+        self.status_component.set_config(config.clone());
+        self.help_component.set_config(config);
     }
 
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         match action {
             Action::SetMode(mode) => self.set_mode(mode),
             Action::SetTimemachineMode(timemachine_mode) => {
@@ -124,16 +107,14 @@ impl Component for Home {
             _ => {}
         }
 
-        self.clock_component.update(action.clone())?;
-        self.command_component.update(action.clone())?;
-        self.interval_component.update(action.clone())?;
-        self.execution_result_component.update(action.clone())?;
-        self.history_component.update(action.clone())?;
-        self.prompt_component.update(action.clone())?;
-        self.status_component.update(action.clone())?;
-        self.help_component.update(action.clone())?;
-
-        Ok(None)
+        self.clock_component.update(action.clone());
+        self.command_component.update(action.clone());
+        self.interval_component.update(action.clone());
+        self.execution_result_component.update(action.clone());
+        self.history_component.update(action.clone());
+        self.prompt_component.update(action.clone());
+        self.status_component.update(action.clone());
+        self.help_component.update(action.clone());
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

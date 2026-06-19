@@ -1,16 +1,13 @@
 use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
 use ratatui::{prelude::*, widgets::*};
-use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
 use crate::{action::Action, config::Config};
 
 #[derive(Default)]
 pub struct Clock {
-    command_tx: Option<UnboundedSender<Action>>,
     config: Config,
-
     time: Option<DateTime<Local>>,
 }
 
@@ -21,21 +18,14 @@ impl Clock {
 }
 
 impl Component for Clock {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
-        self.command_tx = Some(tx);
-        Ok(())
-    }
-
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config;
-        Ok(())
     }
 
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         if let Action::SetClock(datetime) = action {
             self.time = Some(datetime);
         }
-        Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

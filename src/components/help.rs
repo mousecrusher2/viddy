@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
-use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
 use crate::{
@@ -13,7 +12,6 @@ use crate::{
 };
 
 pub struct Help {
-    command_tx: Option<UnboundedSender<Action>>,
     config: Config,
     keybindings: HashMap<(Mode, String), Vec<Vec<KeyEvent>>>,
     y_position: u16,
@@ -49,7 +47,6 @@ fn keys_str(
 impl Help {
     pub fn new(config: Config) -> Self {
         Self {
-            command_tx: None,
             config: config.clone(),
             keybindings: get_action_keys(config.keybindings),
             y_position: 0,
@@ -133,17 +130,11 @@ fn display_key(key: &KeyEvent) -> String {
 }
 
 impl Component for Help {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
-        self.command_tx = Some(tx);
-        Ok(())
-    }
-
-    fn register_config_handler(&mut self, config: Config) -> Result<()> {
+    fn set_config(&mut self, config: Config) {
         self.config = config;
-        Ok(())
     }
 
-    fn update(&mut self, action: Action) -> Result<Option<Action>> {
+    fn update(&mut self, action: Action) {
         match action {
             Action::ShowHelp => self.reset_position(),
             Action::HelpScrollDown => self.scroll_down(),
@@ -154,7 +145,6 @@ impl Component for Help {
             Action::HelpHalfPageUp => self.half_page_up(),
             _ => {}
         }
-        Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
