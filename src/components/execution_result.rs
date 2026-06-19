@@ -30,9 +30,9 @@ pub struct ExecutionResult {
 }
 
 impl ExecutionResult {
-    pub fn new(fold: bool) -> Self {
+    pub fn new(config: Config, fold: bool) -> Self {
         Self {
-            config: Config::new().unwrap(),
+            config,
             result: None,
             x_state: ScrollbarState::default(),
             y_state: ScrollbarState::default(),
@@ -131,10 +131,6 @@ fn text_height(text: &Text) -> usize {
 }
 
 impl Component for ExecutionResult {
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
-    }
-
     fn update(&mut self, action: Action) {
         match action {
             Action::SetResult(result) => self.set_result(result),

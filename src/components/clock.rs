@@ -5,23 +5,18 @@ use ratatui::{prelude::*, widgets::*};
 use super::{Component, Frame};
 use crate::{action::Action, config::Config};
 
-#[derive(Default)]
 pub struct Clock {
     config: Config,
     time: Option<DateTime<Local>>,
 }
 
 impl Clock {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(config: Config) -> Self {
+        Self { config, time: None }
     }
 }
 
 impl Component for Clock {
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
-    }
-
     fn update(&mut self, action: Action) {
         if let Action::SetClock(datetime) = action {
             self.time = Some(datetime);

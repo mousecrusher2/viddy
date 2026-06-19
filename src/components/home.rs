@@ -44,13 +44,13 @@ impl Home {
             config: config.clone(),
             is_no_title,
             mode: Default::default(),
-            command_component: Command::new(runtime_config.clone()),
-            interval_component: Interval::new(runtime_config.clone()),
-            clock_component: Clock::new(),
-            execution_result_component: ExecutionResult::new(is_fold),
-            history_component: History::new(runtime_config.clone()),
+            command_component: Command::new(config.clone(), runtime_config.clone()),
+            interval_component: Interval::new(config.clone(), runtime_config.clone()),
+            clock_component: Clock::new(config.clone()),
+            execution_result_component: ExecutionResult::new(config.clone(), is_fold),
+            history_component: History::new(config.clone(), runtime_config.clone()),
             prompt_component: Prompt::new(),
-            status_component: Status::new(is_fold, diff_mode, is_bell, read_only),
+            status_component: Status::new(config.clone(), is_fold, diff_mode, is_bell, read_only),
             help_component: Help::new(config),
             timemachine_mode,
         }
@@ -76,19 +76,6 @@ impl Component for Home {
         self.prompt_component.register_action_handler(tx.clone());
         self.status_component.register_action_handler(tx.clone());
         self.help_component.register_action_handler(tx.clone());
-    }
-
-    fn set_config(&mut self, config: Config) {
-        self.config = config.clone();
-
-        self.command_component.set_config(config.clone());
-        self.interval_component.set_config(config.clone());
-        self.clock_component.set_config(config.clone());
-        self.execution_result_component.set_config(config.clone());
-        self.history_component.set_config(config.clone());
-        self.prompt_component.set_config(config.clone());
-        self.status_component.set_config(config.clone());
-        self.help_component.set_config(config);
     }
 
     fn update(&mut self, action: Action) {

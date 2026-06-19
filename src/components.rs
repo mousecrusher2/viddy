@@ -2,7 +2,7 @@ use color_eyre::eyre::Result;
 use ratatui::layout::Rect;
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::{action::Action, config::Config, tui::Frame};
+use crate::{action::Action, tui::Frame};
 
 pub mod clock;
 pub mod command;
@@ -26,13 +26,6 @@ pub trait Component {
     ///
     /// * `tx` - An unbounded sender that can send actions.
     fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {}
-
-    /// Set configuration settings for the component if necessary.
-    ///
-    /// # Arguments
-    ///
-    /// * `config` - Configuration settings.
-    fn set_config(&mut self, config: Config) {}
 
     /// Update the state of the component based on a received action. (REQUIRED)
     ///

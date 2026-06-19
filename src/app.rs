@@ -88,7 +88,7 @@ impl<S: Store> App<S> {
             c.defaulting();
             c
         } else {
-            Config::new()?
+            Config::load()?
         };
 
         let default_exec = config.general.no_shell.unwrap_or_default();
@@ -213,10 +213,6 @@ impl<S: Store> App<S> {
 
         for component in self.components.iter_mut() {
             component.register_action_handler(action_tx.clone());
-        }
-
-        for component in self.components.iter_mut() {
-            component.set_config(self.config.clone());
         }
 
         loop {

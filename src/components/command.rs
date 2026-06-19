@@ -10,19 +10,15 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn new(runtime_config: RuntimeConfig) -> Self {
+    pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
         Self {
+            config,
             runtime_config,
-            config: Config::new().unwrap(),
         }
     }
 }
 
 impl Component for Command {
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
-    }
-
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
         let block = Block::default()
             .title("Command")

@@ -18,9 +18,15 @@ pub struct Status {
 }
 
 impl Status {
-    pub fn new(is_fold: bool, diff_mode: Option<DiffMode>, is_bell: bool, read_only: bool) -> Self {
+    pub fn new(
+        config: Config,
+        is_fold: bool,
+        diff_mode: Option<DiffMode>,
+        is_bell: bool,
+        read_only: bool,
+    ) -> Self {
         Self {
-            config: Config::new().unwrap(),
+            config,
             is_fold,
             diff_mode,
             is_suspend: false,
@@ -31,10 +37,6 @@ impl Status {
 }
 
 impl Component for Status {
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
-    }
-
     fn update(&mut self, action: Action) {
         match action {
             Action::SetFold(is_fold) => self.is_fold = is_fold,

@@ -12,7 +12,6 @@ use crate::{
 };
 
 pub struct Help {
-    config: Config,
     keybindings: HashMap<(Mode, String), Vec<Vec<KeyEvent>>>,
     y_position: u16,
     y_area_size: u16,
@@ -47,7 +46,6 @@ fn keys_str(
 impl Help {
     pub fn new(config: Config) -> Self {
         Self {
-            config: config.clone(),
             keybindings: get_action_keys(config.keybindings),
             y_position: 0,
             y_area_size: 0,
@@ -130,10 +128,6 @@ fn display_key(key: &KeyEvent) -> String {
 }
 
 impl Component for Help {
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
-    }
-
     fn update(&mut self, action: Action) {
         match action {
             Action::ShowHelp => self.reset_position(),

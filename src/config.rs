@@ -73,7 +73,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Result<Self, config::ConfigError> {
+    pub fn load() -> Result<Self, config::ConfigError> {
         let data_dir = crate::utils::get_data_dir();
         let config_dir = crate::utils::get_config_dir();
         let mut builder = config::Config::builder()
@@ -625,7 +625,7 @@ mod tests {
 
     #[test]
     fn test_config() -> Result<()> {
-        let c = Config::new()?;
+        let c = Config::load()?;
         assert_eq!(
             c.keybindings
                 .get(&Mode::All)

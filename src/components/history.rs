@@ -33,13 +33,13 @@ pub struct History {
 }
 
 impl History {
-    pub fn new(runtime_config: RuntimeConfig) -> Self {
+    pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
         let state = ListState::default();
         let index = HashMap::new();
         Self {
             latest_id: None,
             command_tx: None,
-            config: Config::new().unwrap(),
+            config,
             items: VecDeque::new(),
             state,
             index,
@@ -195,10 +195,6 @@ impl History {
 impl Component for History {
     fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
         self.command_tx = Some(tx);
-    }
-
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
     }
 
     fn update(&mut self, action: Action) {

@@ -11,10 +11,10 @@ pub struct Interval {
 }
 
 impl Interval {
-    pub fn new(runtime_config: RuntimeConfig) -> Self {
+    pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
         Self {
+            config,
             runtime_config,
-            config: Config::new().unwrap(),
         }
     }
 
@@ -32,10 +32,6 @@ impl Interval {
 }
 
 impl Component for Interval {
-    fn set_config(&mut self, config: Config) {
-        self.config = config;
-    }
-
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
         let block = Block::default()
             .title("Every")
