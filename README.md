@@ -8,6 +8,21 @@ Modern `watch` command.
 
 Viddy well, gopher. Viddy well.
 
+## About this fork
+
+This repository is a fork of [sachaos/viddy](https://github.com/sachaos/viddy).
+It contains a few local fixes and experiments, but they have been kept fairly
+pragmatic and are not currently prepared as clean upstream-ready patches. If
+there is interest, I may split them up and polish them for upstream pull
+requests.
+
+Notable changes in this fork include:
+
+* Terminal text handling tweaks, including grapheme-aware wrapping.
+* More reliable terminal cleanup on Windows.
+* Migration to Rust 2024 edition.
+* Routine dependency updates.
+
 ## Demo
 
 <p align="center">
