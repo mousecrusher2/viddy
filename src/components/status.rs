@@ -1,16 +1,11 @@
-use std::{collections::HashMap, time::Duration};
-
-use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
 use crate::{
     action::{Action, DiffMode},
-    config::{Config, KeyBindings, RuntimeConfig},
+    config::Config,
 };
 
 pub struct Status {
@@ -72,7 +67,7 @@ impl Component for Status {
                 disabled_style
             },
         )];
-        if let Some(mode) = self.diff_mode {
+        if self.diff_mode.is_some() {
             status.push(Span::styled(
                 " [D]iff",
                 if self.diff_mode.is_some() {

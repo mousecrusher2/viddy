@@ -1,17 +1,14 @@
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
-use ansi_to_tui::IntoText;
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
+use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::Instrument;
 
 use super::{Component, Frame};
 use crate::{
     action::Action,
-    config::{Config, KeyBindings, RuntimeConfig},
+    config::{Config, KeyBindings},
     mode::Mode,
 };
 
@@ -412,7 +409,7 @@ fn get_action_keys(keybindings: KeyBindings) -> HashMap<(Mode, String), Vec<Vec<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::event::{KeyCode, KeyEvent};
     use std::collections::HashMap;
 
     #[test]

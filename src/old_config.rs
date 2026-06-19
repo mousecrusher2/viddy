@@ -66,7 +66,7 @@ impl OldConfig {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     #[test]
     fn test_old_config() {
         let config_str = r#"

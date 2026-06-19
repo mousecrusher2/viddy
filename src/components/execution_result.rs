@@ -1,21 +1,15 @@
-use std::{collections::HashMap, time::Duration};
-
-use ansi_parser::{AnsiParser, AnsiSequence, Output};
 use ansi_to_tui::IntoText;
-use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
+use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::{buffer::CellWidth as _, prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
 use symbols::scrollbar;
 use tokio::sync::mpsc::UnboundedSender;
-use tracing_subscriber::field::debug;
 use unicode_segmentation::UnicodeSegmentation as _;
 
 use super::{Component, Frame};
 use crate::{
     action::Action,
-    config::{Config, KeyBindings, RuntimeConfig},
+    config::Config,
     termtext::{Char, Text},
     utils::is_in_area,
 };
@@ -30,7 +24,6 @@ pub struct ExecutionResult {
     y_state: ScrollbarState,
     x_position: u16,
     y_position: u16,
-    x_area_size: u16,
     y_area_size: u16,
     y_max_scroll_size: u16,
     fold: bool,
@@ -47,7 +40,6 @@ impl ExecutionResult {
             x_state: ScrollbarState::default(),
             y_state: ScrollbarState::default(),
             fold,
-            x_area_size: 0,
             y_area_size: 0,
             y_max_scroll_size: 0,
             x_position: 0,
@@ -312,16 +304,18 @@ fn fold_text(str: &Text, width: usize) -> Text {
     result
 }
 
-fn remove_ansi(text: &str) -> String {
-    text.ansi_parse()
-        .filter(|o| matches!(o, Output::TextBlock(_)))
-        .map(|o| o.to_string())
-        .collect::<String>()
-}
-
 #[cfg(test)]
-mod test {
+mod tests {
+    use ansi_parser::{AnsiParser as _, Output};
+
     use super::*;
+
+    fn remove_ansi(text: &str) -> String {
+        text.ansi_parse()
+            .filter(|o| matches!(o, Output::TextBlock(_)))
+            .map(|o| o.to_string())
+            .collect::<String>()
+    }
 
     #[test]
     fn test_fold_text() {

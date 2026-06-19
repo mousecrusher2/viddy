@@ -23,6 +23,7 @@ pub mod status;
 /// `Component` is a trait that represents a visual and interactive element of the user interface.
 /// Implementers of this trait can be registered with the main application loop and will be able to receive events,
 /// update state, and be rendered on the screen.
+#[allow(unused_variables)]
 pub trait Component {
     /// Register an action handler that can send actions for processing if necessary.
     ///
@@ -33,7 +34,6 @@ pub trait Component {
     /// # Returns
     ///
     /// * `Result<()>` - An Ok result or an error.
-    #[allow(unused_variables)]
     fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
         Ok(())
     }
@@ -46,7 +46,6 @@ pub trait Component {
     /// # Returns
     ///
     /// * `Result<()>` - An Ok result or an error.
-    #[allow(unused_variables)]
     fn register_config_handler(&mut self, config: Config) -> Result<()> {
         Ok(())
     }
@@ -88,7 +87,6 @@ pub trait Component {
     /// # Returns
     ///
     /// * `Result<Option<Action>>` - An action to be processed or none.
-    #[allow(unused_variables)]
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>> {
         Ok(None)
     }
@@ -101,7 +99,6 @@ pub trait Component {
     /// # Returns
     ///
     /// * `Result<Option<Action>>` - An action to be processed or none.
-    #[allow(unused_variables)]
     fn handle_mouse_events(&mut self, mouse: MouseEvent) -> Result<Option<Action>> {
         Ok(None)
     }
@@ -114,7 +111,6 @@ pub trait Component {
     /// # Returns
     ///
     /// * `Result<Option<Action>>` - An action to be processed or none.
-    #[allow(unused_variables)]
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         Ok(None)
     }

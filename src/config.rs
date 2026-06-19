@@ -1,20 +1,15 @@
-use std::{collections::HashMap, default, fmt, ops::Deref, path::PathBuf, thread::current};
+use std::{collections::HashMap, path::PathBuf};
 
 use chrono::Duration;
 use color_eyre::eyre::Result;
-use config::{ConfigError, Value};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use derive_deref::{Deref, DerefMut};
 use ratatui::style::{Color, Modifier, Style};
-use serde::{
-    Deserialize, Serialize,
-    de::{self, Deserializer, MapAccess, Visitor},
-};
-use serde_json::Value as JsonValue;
+use serde::{Deserialize, de::Deserializer};
 
 use crate::{
     action::Action,
-    mode::{self, Mode},
+    mode::Mode,
     old_config::{General as OldGeneral, OldConfig},
 };
 
@@ -126,8 +121,8 @@ impl Config {
                     .map(|(keys, action)| (keys.clone(), action.clone()))
                     .collect::<HashMap<_, _>>();
                 actions
-                    .into_iter()
-                    .map(|(keys, action)| (*mode, action))
+                    .into_values()
+                    .map(|action| (*mode, action))
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();

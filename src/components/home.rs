@@ -1,10 +1,5 @@
-use core::time;
-use std::{collections::HashMap, time::Duration};
-
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
-use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{prelude::*, style::Style, widgets::*};
-use serde::{Deserialize, Serialize};
+use color_eyre::eyre::Result;
+use ratatui::{prelude::*, widgets::*};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{
@@ -13,16 +8,13 @@ use super::{
 };
 use crate::{
     action::{Action, DiffMode},
-    config::{Config, KeyBindings, RuntimeConfig},
+    config::{Config, RuntimeConfig},
     mode::Mode,
-    store::Record,
-    widget::history_item::HistoryItem,
 };
 
 pub struct Home {
     command_tx: Option<UnboundedSender<Action>>,
     config: Config,
-    runtime_config: RuntimeConfig,
     is_no_title: bool,
 
     mode: Mode,
@@ -50,7 +42,6 @@ impl Home {
         timemachine_mode: bool,
     ) -> Self {
         Self {
-            runtime_config: runtime_config.clone(),
             command_tx: None,
             config: config.clone(),
             is_no_title,

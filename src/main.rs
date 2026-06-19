@@ -1,7 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-
 pub mod action;
 pub mod app;
 mod bytes;
@@ -21,25 +17,19 @@ mod types;
 pub mod utils;
 mod widget;
 
-use std::path::PathBuf;
-
-use chrono::Duration;
 use clap::Parser;
 use cli::Cli;
 use color_eyre::eyre::{Result, eyre};
-use directories::ProjectDirs;
-use store::Store;
 
 use crate::{
     app::App,
-    utils::{initialize_logging, initialize_panic_handler, version},
+    utils::{initialize_logging, initialize_panic_handler},
 };
 
 async fn tokio_main() -> Result<()> {
     initialize_panic_handler()?;
 
     let args = Cli::parse();
-    let interval = Duration::from(args.interval);
 
     if args.load.is_none() && args.command.is_empty() {
         return Err(eyre!("No command provided"));
@@ -92,11 +82,15 @@ fn main() -> Result<()> {
     unsafe {
         // Safety: The caller must ensure this is called in a single-threaded program.
         initialize_logging()
-            .inspect_err(|e| eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME")))?;
+            .inspect_err(|_| eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME")))?;
     }
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        tokio_main()
-            .await
-            .inspect_err(|e| eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME")))
-    })
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async {
+            tokio_main().await.inspect_err(|_| {
+                eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME"))
+            })
+        })
 }

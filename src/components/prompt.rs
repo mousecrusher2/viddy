@@ -1,17 +1,11 @@
-use std::{collections::HashMap, time::Duration};
-
 use color_eyre::eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use super::{Component, Frame};
-use crate::{
-    action::Action,
-    config::{Config, KeyBindings, RuntimeConfig},
-};
+use crate::{action::Action, config::Config};
 
 #[derive(Default)]
 pub struct Prompt {

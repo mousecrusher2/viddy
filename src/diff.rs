@@ -1,5 +1,4 @@
 use dissimilar::{Chunk, diff};
-use similar::{ChangeTag, TextDiff};
 
 use crate::termtext::Text;
 
@@ -17,7 +16,6 @@ pub fn diff_and_mark(current: &str, previous: &str, text: &mut Text) {
                 cursor += s.chars().count();
             }
             Chunk::Insert(s) => {
-                let length = s.chars().count();
                 for c in s.chars() {
                     if !c.is_whitespace() {
                         text.mark_text(cursor, cursor + 1, style);
@@ -44,7 +42,6 @@ pub fn diff_and_mark_delete(current: &str, previous: &str, text: &mut Text) {
                 cursor += s.chars().count();
             }
             Chunk::Delete(s) => {
-                let length = s.chars().count();
                 for c in s.chars() {
                     if !c.is_whitespace() {
                         text.mark_text(cursor, cursor + 1, style);
@@ -58,7 +55,7 @@ pub fn diff_and_mark_delete(current: &str, previous: &str, text: &mut Text) {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use anstyle::Style;
 
     use crate::termtext::Text;

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use chrono::{Duration, format::Parsed};
+use chrono::Duration;
 use clap::Parser;
-use color_eyre::eyre::{Result, bail, eyre};
+use color_eyre::eyre::{Result, bail};
 use serde_with::serde_as;
 
 use crate::utils::version;

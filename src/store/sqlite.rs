@@ -1,13 +1,11 @@
 use chrono::{DateTime, Local, Utc};
 use color_eyre::Result;
 use rusqlite::Connection;
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use crate::store::{Record, Store};
 use crate::types::ExecutionId;
-use crate::widget::history_item::HistoryItem;
 
 #[derive(Debug, Clone)]
 pub struct SQLiteStore {
@@ -83,8 +81,8 @@ impl Store for SQLiteStore {
                     record.stderr,
                     record.end_time.to_utc().to_rfc3339(),
                     record.exit_code,
-                    record.diff.map(|(add, delete)| add as i64),
-                    record.diff.map(|(add, delete)| delete as i64),
+                    record.diff.map(|(add, _delete)| add as i64),
+                    record.diff.map(|(_add, delete)| delete as i64),
                     record.previous_id,
                 ),
             )?;

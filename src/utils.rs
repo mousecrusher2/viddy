@@ -2,7 +2,6 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use color_eyre::eyre::Result;
 use directories::{BaseDirs, ProjectDirs};
-use human_panic::Metadata;
 use ratatui::layout::Rect;
 use tracing::error;
 use tracing_error::ErrorLayer;

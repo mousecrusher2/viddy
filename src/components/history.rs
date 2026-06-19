@@ -2,26 +2,19 @@ use std::{
     cell::RefCell,
     collections::{HashMap, VecDeque},
     rc::Rc,
-    time::Duration,
 };
 
 use chrono::{DateTime, Local};
-use color_eyre::{
-    eyre::{Ok, OptionExt, Result},
-    owo_colors::OwoColorize,
-};
-use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
+use color_eyre::eyre::{Ok, Result};
+use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::{prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
-use symbols::scrollbar;
 use tokio::sync::mpsc::UnboundedSender;
 use tui_widget_list::{ListBuilder, ListState, ListView};
 
 use super::{Component, Frame};
 use crate::{
     action::Action,
-    config::{Config, KeyBindings, RuntimeConfig},
-    mode::Mode,
+    config::{Config, RuntimeConfig},
     types::ExecutionId,
     utils::is_in_area,
     widget::history_item::HistoryItem,
@@ -34,10 +27,8 @@ pub struct History {
     items: VecDeque<Rc<RefCell<HistoryItem>>>,
     index: HashMap<ExecutionId, Rc<RefCell<HistoryItem>>>,
     state: ListState,
-    mode: Mode,
     runtime_config: RuntimeConfig,
     timemachine_mode: bool,
-    y_state: ScrollbarState,
     rect: Rect,
 }
 
@@ -51,11 +42,9 @@ impl History {
             config: Config::new().unwrap(),
             items: VecDeque::new(),
             state,
-            mode: Default::default(),
             index,
             runtime_config,
             timemachine_mode: false,
-            y_state: ScrollbarState::default(),
             rect: Rect::default(),
         }
     }

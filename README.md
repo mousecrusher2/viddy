@@ -45,7 +45,7 @@ Notable changes in this fork include:
 * Search text.
 * Suspend and restart execution.
 * Support shell alias
-    * See detail https://github.com/sachaos/viddy/issues/2#issuecomment-904002053
+    * See detail <https://github.com/sachaos/viddy/issues/2#issuecomment-904002053>
 * Customize keymappings.
 * Customize color.
 
@@ -87,7 +87,7 @@ To install Viddy on Windows, first install the Scoop package manager, and then r
 
 **NOTE**: The git package is required in order to add additional Scoop "buckets".
 
-```
+```console
 scoop install git
 scoop bucket add extras
 scoop install extras/viddy
@@ -98,6 +98,7 @@ scoop install extras/viddy
 ```shell
 yay -S viddy
 ```
+
 Alternatively you can use the [AUR Git repo](https://aur.archlinux.org/packages/viddy/) directly
 
 ### Alpine Linux
@@ -121,10 +122,10 @@ asdf global viddy latest
 | key       |                                            |
 |-----------|--------------------------------------------|
 | SPACE     | Toggle time machine mode                   |
-| s         | Toggle <ins>s</ins>uspend execution                   |
-| b         | Toggle ring terminal <ins>b</ins>ell                  |
-| d         | Toggle <ins>d</ins>iff                                |
-| t         | Toggle header/<ins>t</ins>itle display                      |
+| s         | Toggle <ins>s</ins>uspend execution        |
+| b         | Toggle ring terminal <ins>b</ins>ell       |
+| d         | Toggle <ins>d</ins>iff                     |
+| t         | Toggle header/<ins>t</ins>itle display     |
 | ?         | Toggle help view                           |
 | /         | Search text                                |
 | j         | Pager: next line                           |

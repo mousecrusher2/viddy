@@ -1,11 +1,6 @@
-use std::{fmt, string::ToString};
-
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyEvent, MouseEvent};
-use serde::{
-    Deserialize, Serialize,
-    de::{self, Deserializer, Visitor},
-};
+use serde::{Deserialize, Serialize};
 use strum::Display;
 
 use crate::{mode::Mode, termtext::Text, types::ExecutionId};

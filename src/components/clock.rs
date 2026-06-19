@@ -1,17 +1,10 @@
-use std::{collections::HashMap, time::Duration};
-
 use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
-use crate::{
-    action::Action,
-    config::{Config, KeyBindings, RuntimeConfig},
-};
+use crate::{action::Action, config::Config};
 
 #[derive(Default)]
 pub struct Clock {

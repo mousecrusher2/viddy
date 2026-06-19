@@ -2,10 +2,6 @@ pub mod memory;
 pub mod sqlite;
 
 use color_eyre::eyre::Result;
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
 
 use chrono::{DateTime, Local};
 

@@ -1,16 +1,10 @@
-use std::{
-    fmt::{Display, format},
-    io::Read,
-    iter,
-};
+use std::{io::Read, iter};
 
 use anstyle::{AnsiColor, Color, Effects, RgbColor, Style};
 use anstyle_parse::{DefaultCharAccumulator, ParamsIter, Parser, Perform};
-use color_eyre::owo_colors::{OwoColorize, colors::Default};
 use derive_deref::{Deref, DerefMut};
 use ratatui::buffer::CellWidth;
 use serde::{Deserialize, Serialize};
-use unicode_segmentation::UnicodeSegmentation as _;
 
 #[derive(Debug, Deref, DerefMut, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct Text {
@@ -382,7 +376,7 @@ pub fn convert_to_anstyle_color(c: ratatui::style::Color) -> Color {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     fn chars(text: &Text) -> Vec<char> {

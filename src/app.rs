@@ -1,20 +1,14 @@
-use core::time;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-use anstyle::{Color, RgbColor, Style};
+use anstyle::{Color, Style};
 use chrono::Duration;
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
-use crossterm::event::{Event, KeyEvent, MouseEvent};
-use ratatui::{layout::Position, prelude::Rect, widgets::Block};
-use serde::{Deserialize, Serialize};
-use tokio::{
-    runtime,
-    sync::{Mutex, mpsc},
-};
-use tracing_subscriber::field::debug;
+use color_eyre::eyre::Result;
+use crossterm::event::KeyEvent;
+use ratatui::{layout::Position, prelude::Rect};
+use tokio::sync::mpsc;
 
 use crate::{
-    action::{self, Action, DiffMode},
+    action::{Action, DiffMode},
     bytes::normalize_stdout,
     cli::Cli,
     components::{Component, fps::FpsCounter, home::Home},
@@ -24,7 +18,7 @@ use crate::{
     old_config::OldConfig,
     runner::{run_executor, run_executor_precise},
     search::search_and_mark,
-    store::{self, RuntimeConfig as StoreRuntimeConfig, Store},
+    store::{RuntimeConfig as StoreRuntimeConfig, Store},
     termtext, tui,
     types::ExecutionId,
 };
@@ -360,7 +354,7 @@ impl<S: Store> App<S> {
                             action_tx.send(Action::InsertHistory(id, start_time))?;
                         }
                     }
-                    Action::ShowExecution(id, end_id) => {
+                    Action::ShowExecution(id, _end_id) => {
                         let style =
                             termtext::convert_to_anstyle(self.config.get_style("background"));
                         let record = self.store.get_record(id)?;
@@ -474,11 +468,11 @@ impl<S: Store> App<S> {
                         self.is_bell = is_bell;
                     }
                     Action::SwitchSuspend => {
-                        let is_suspend = self.is_suspend.lock().await;
+                        let is_suspend = self.is_suspend.lock().unwrap();
                         action_tx.send(Action::SetSuspend(!*is_suspend))?;
                     }
                     Action::SetSuspend(new_is_suspend) => {
-                        let mut is_suspend = self.is_suspend.lock().await;
+                        let mut is_suspend = self.is_suspend.lock().unwrap();
                         *is_suspend = new_is_suspend;
                     }
                     Action::DiffDetected => {

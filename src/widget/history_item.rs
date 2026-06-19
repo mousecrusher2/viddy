@@ -1,8 +1,8 @@
 use chrono::{DateTime, Duration, Local};
 use ratatui::prelude::*;
-use tui_widget_list::{ListBuildContext, ListState};
+use tui_widget_list::ListBuildContext;
 
-use crate::{config::Config, types::ExecutionId};
+use crate::types::ExecutionId;
 
 #[derive(Debug, Clone)]
 pub struct HistoryItem {

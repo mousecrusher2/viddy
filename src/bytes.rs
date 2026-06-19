@@ -171,7 +171,7 @@ fn skip_ansi_escape_sequence<I: Iterator<Item = char>>(ch: char, chars: &mut I) 
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

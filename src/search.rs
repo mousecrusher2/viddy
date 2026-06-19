@@ -1,11 +1,11 @@
-use anstyle::{AnsiColor, Color, Style};
+use anstyle::Style;
 
 use crate::termtext::Text;
 
 pub fn search_and_mark(string: &str, text: &mut Text, query: &str, style: Style) {
     let mut byte_to_char_idx = vec![0; string.len() + 1];
     let mut char_idx = 0;
-    for (i, c) in string.char_indices() {
+    for (i, _c) in string.char_indices() {
         byte_to_char_idx[i] = char_idx;
         char_idx += 1;
     }
@@ -17,7 +17,10 @@ pub fn search_and_mark(string: &str, text: &mut Text, query: &str, style: Style)
     }
 }
 
-mod test {
+#[cfg(test)]
+mod tests {
+    use anstyle::{AnsiColor, Color};
+
     use super::*;
 
     #[test]

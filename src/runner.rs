@@ -1,17 +1,12 @@
 use color_eyre::Result;
-use std::{ops::Sub, sync::Arc};
+use std::sync::{Arc, Mutex};
 
 use dissimilar::{Chunk, diff};
-use tokio::{
-    process::Command,
-    sync::{Mutex, mpsc, watch},
-};
+use tokio::sync::mpsc;
 
 use crate::{
     action::Action,
-    bytes::normalize_stdout,
-    components::status,
-    config::{Config, RuntimeConfig},
+    config::RuntimeConfig,
     exec::exec,
     store::{Record, Store},
     types::ExecutionId,
@@ -28,7 +23,7 @@ pub async fn run_executor<S: Store>(
     let mut counter = latest_id.map(|id| id.0 + 1).unwrap_or(0);
     loop {
         counter += 1;
-        if *is_suspend.lock().await {
+        if *is_suspend.lock().unwrap() {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             continue;
         }
@@ -47,7 +42,6 @@ pub async fn run_executor<S: Store>(
 
         let exit_code = status;
         let utf8_stdout = String::from_utf8_lossy(&stdout).to_string();
-        let utf8_stderr = String::from_utf8_lossy(&stderr).to_string();
         let end_time = chrono::Local::now();
 
         let latest_id = store.get_latest_id()?;
@@ -106,7 +100,7 @@ pub async fn run_executor_precise<S: Store>(
     loop {
         counter += 1;
         let start_time = chrono::Local::now();
-        if *is_suspend.lock().await {
+        if *is_suspend.lock().unwrap() {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             continue;
         }
@@ -124,7 +118,6 @@ pub async fn run_executor_precise<S: Store>(
 
         let exit_code = status;
         let utf8_stdout = String::from_utf8_lossy(&stdout).to_string();
-        let utf8_stderr = String::from_utf8_lossy(&stderr).to_string();
         let end_time = chrono::Local::now();
 
         let latest_id = store.get_latest_id()?;
@@ -193,7 +186,7 @@ fn count_diff(old: &str, current: &str) -> (u32, u32) {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::count_diff;
 
     #[test]
