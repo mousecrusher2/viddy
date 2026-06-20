@@ -2,7 +2,6 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use color_eyre::eyre::Result;
 use directories::{BaseDirs, ProjectDirs};
-use ratatui::layout::Rect;
 use tracing::error;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{
@@ -185,8 +184,4 @@ Authors: {author}
 Config directory: {config_dir_path}
 Data directory: {data_dir_path}"
     )
-}
-
-pub fn is_in_area(x: u16, y: u16, area: Rect) -> bool {
-    x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
 }

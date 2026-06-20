@@ -16,7 +16,6 @@ use crate::{
     action::Action,
     config::{Config, RuntimeConfig},
     types::ExecutionId,
-    utils::is_in_area,
     widget::history_item::HistoryItem,
 };
 
@@ -180,7 +179,10 @@ impl History {
 
     fn handle_mouse_events(&mut self, event: MouseEvent) {
         log::debug!("Mouse event: {:?}", event);
-        if !is_in_area(event.column, event.row, self.rect) {
+        if !self.rect.contains(Position {
+            x: event.column,
+            y: event.row,
+        }) {
             return;
         }
 
