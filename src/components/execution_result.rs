@@ -118,6 +118,10 @@ fn text_height(text: &Text) -> usize {
     text.lines().len()
 }
 
+fn scrollable_size(content_size: usize, viewport_size: u16) -> u16 {
+    u16::try_from(content_size.saturating_sub(viewport_size.into())).unwrap_or(u16::MAX)
+}
+
 impl Component for ExecutionResult {
     fn update(&mut self, action: Action) {
         match action {
@@ -165,8 +169,8 @@ impl Component for ExecutionResult {
 
         let mut body = area;
 
-        let mut y_scrollable = y_max.saturating_sub(body.height as usize);
-        let mut x_scrollable = x_max.saturating_sub(body.width as usize);
+        let mut y_scrollable = scrollable_size(y_max, body.height);
+        let mut x_scrollable = scrollable_size(x_max, body.width);
         let scroll_style = self.config.get_style("scrollbar");
 
         if y_scrollable > 0 {
@@ -176,9 +180,9 @@ impl Component for ExecutionResult {
                 .style(scroll_style)
                 .thumb_symbol("║");
             let mut scrollbar_state =
-                ScrollbarState::new(y_scrollable).position(self.y_position as usize);
+                ScrollbarState::new(y_scrollable.into()).position(self.y_position.into());
             f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
-            if x_max > body.width as usize {
+            if x_max > body.width.into() {
                 x_scrollable = x_scrollable.saturating_add(1);
             }
         }
@@ -190,9 +194,9 @@ impl Component for ExecutionResult {
                 .style(scroll_style)
                 .thumb_symbol("=");
             let mut scrollbar_state =
-                ScrollbarState::new(x_scrollable).position(self.x_position as usize);
+                ScrollbarState::new(x_scrollable.into()).position(self.x_position.into());
             f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
-            if y_max > body.height as usize {
+            if y_max > body.height.into() {
                 y_scrollable = y_scrollable.saturating_add(1);
             }
         }
@@ -204,26 +208,26 @@ impl Component for ExecutionResult {
                 .style(scroll_style)
                 .thumb_symbol("║");
             let mut scrollbar_state =
-                ScrollbarState::new(y_scrollable).position(self.y_position as usize);
+                ScrollbarState::new(y_scrollable.into()).position(self.y_position.into());
             f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
-            if x_max > body.width as usize {
+            if x_max > body.width.into() {
                 x_scrollable = x_scrollable.saturating_add(1);
             }
         }
 
-        if self.x_position > x_scrollable as u16 {
-            self.x_position = x_scrollable as u16;
+        if self.x_position > x_scrollable {
+            self.x_position = x_scrollable;
         }
 
-        if self.y_position > y_scrollable as u16 {
-            self.y_position = y_scrollable as u16;
+        if self.y_position > y_scrollable {
+            self.y_position = y_scrollable;
         }
 
         let current = current.into_text()?;
         let paragraph = Paragraph::new(current).scroll((self.y_position, self.x_position));
         f.render_widget(paragraph, body);
 
-        self.y_max_scroll_size = y_scrollable as u16;
+        self.y_max_scroll_size = y_scrollable;
         self.y_area_size = body.height;
 
         Ok(())
