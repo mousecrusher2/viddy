@@ -10,7 +10,6 @@ use crate::{
     action::Action,
     config::Config,
     termtext::{Char, Text},
-    utils::is_in_area,
 };
 
 pub struct ExecutionResult {
@@ -18,8 +17,6 @@ pub struct ExecutionResult {
 
     result: Option<Text>,
 
-    x_state: ScrollbarState,
-    y_state: ScrollbarState,
     x_position: u16,
     y_position: u16,
     y_area_size: u16,
@@ -34,8 +31,6 @@ impl ExecutionResult {
         Self {
             config,
             result: None,
-            x_state: ScrollbarState::default(),
-            y_state: ScrollbarState::default(),
             fold,
             y_area_size: 0,
             y_max_scroll_size: 0,
@@ -51,52 +46,42 @@ impl ExecutionResult {
 
     fn scroll_down(&mut self) {
         self.y_position = self.y_position.saturating_add(1);
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn scroll_up(&mut self) {
         self.y_position = self.y_position.saturating_sub(1);
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn page_up(&mut self) {
         self.y_position = self.y_position.saturating_sub(self.y_area_size);
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn page_down(&mut self) {
         self.y_position = self.y_position.saturating_add(self.y_area_size);
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn half_page_up(&mut self) {
         self.y_position = self.y_position.saturating_sub(self.y_area_size / 2);
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn half_page_down(&mut self) {
         self.y_position = self.y_position.saturating_add(self.y_area_size / 2);
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn bottom_of_page(&mut self) {
         self.y_position = self.y_max_scroll_size;
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn top_of_page(&mut self) {
         self.y_position = 0;
-        self.y_state = self.y_state.position(self.y_position as usize);
     }
 
     fn scroll_right(&mut self) {
         self.x_position = self.x_position.saturating_add(10);
-        self.x_state = self.x_state.position(self.x_position as usize);
     }
 
     fn scroll_left(&mut self) {
         self.x_position = self.x_position.saturating_sub(10);
-        self.x_state = self.x_state.position(self.x_position as usize);
     }
 
     fn set_fold(&mut self, is_fold: bool) {
@@ -104,7 +89,10 @@ impl ExecutionResult {
     }
 
     fn handle_mouse_events(&mut self, event: MouseEvent) {
-        if !is_in_area(event.column, event.row, self.rect) {
+        if !self.rect.contains(Position {
+            x: event.column,
+            y: event.row,
+        }) {
             return;
         }
 
@@ -170,7 +158,6 @@ impl Component for ExecutionResult {
             }
 
             self.x_position = 0;
-            self.x_state = self.x_state.position(0);
         } else {
             x_max = text_width(&text);
             y_max = text_height(&text);
@@ -188,7 +175,9 @@ impl Component for ExecutionResult {
                 .symbols(scrollbar::VERTICAL)
                 .style(scroll_style)
                 .thumb_symbol("║");
-            f.render_stateful_widget(scrollbar, area, &mut self.y_state);
+            let mut scrollbar_state =
+                ScrollbarState::new(y_scrollable).position(self.y_position as usize);
+            f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
             if x_max > body.width as usize {
                 x_scrollable = x_scrollable.saturating_add(1);
             }
@@ -200,7 +189,9 @@ impl Component for ExecutionResult {
                 .symbols(scrollbar::HORIZONTAL)
                 .style(scroll_style)
                 .thumb_symbol("=");
-            f.render_stateful_widget(scrollbar, area, &mut self.x_state);
+            let mut scrollbar_state =
+                ScrollbarState::new(x_scrollable).position(self.x_position as usize);
+            f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
             if y_max > body.height as usize {
                 y_scrollable = y_scrollable.saturating_add(1);
             }
@@ -212,23 +203,20 @@ impl Component for ExecutionResult {
                 .symbols(scrollbar::VERTICAL)
                 .style(scroll_style)
                 .thumb_symbol("║");
-            f.render_stateful_widget(scrollbar, area, &mut self.y_state);
+            let mut scrollbar_state =
+                ScrollbarState::new(y_scrollable).position(self.y_position as usize);
+            f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
             if x_max > body.width as usize {
                 x_scrollable = x_scrollable.saturating_add(1);
             }
         }
 
-        self.y_state = self.y_state.content_length(y_scrollable);
-        self.x_state = self.x_state.content_length(x_scrollable);
-
         if self.x_position > x_scrollable as u16 {
             self.x_position = x_scrollable as u16;
-            self.x_state = self.x_state.position(x_scrollable);
         }
 
         if self.y_position > y_scrollable as u16 {
             self.y_position = y_scrollable as u16;
-            self.y_state = self.y_state.position(y_scrollable);
         }
 
         let current = current.into_text()?;
