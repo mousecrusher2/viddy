@@ -28,7 +28,6 @@ pub struct History {
     state: ListState,
     runtime_config: RuntimeConfig,
     timemachine_mode: bool,
-    rect: Rect,
 }
 
 impl History {
@@ -44,7 +43,6 @@ impl History {
             index,
             runtime_config,
             timemachine_mode: false,
-            rect: Rect::default(),
         }
     }
 
@@ -177,9 +175,9 @@ impl History {
         self.select_latest()
     }
 
-    fn handle_mouse_events(&mut self, event: MouseEvent) {
+    fn handle_mouse_events(&mut self, event: MouseEvent, area: Rect) {
         log::debug!("Mouse event: {:?}", event);
-        if !self.rect.contains(Position {
+        if !area.contains(Position {
             x: event.column,
             y: event.row,
         }) {
@@ -199,7 +197,7 @@ impl Component for History {
         self.command_tx = Some(tx);
     }
 
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action, area: Rect) {
         match action {
             Action::InsertHistory(id, start_time) => self.insert_history(id, start_time),
             Action::UpdateHistoryResult(id, diff, exit_code) => {
@@ -215,14 +213,12 @@ impl Component for History {
             Action::GoToMorePast => self.go_to_more_past(),
             Action::GoToOldest => self.go_to_oldest(),
             Action::GoToCurrent => self.go_to_current(),
-            Action::MouseEvent(e) => self.handle_mouse_events(e),
+            Action::MouseEvent(e) => self.handle_mouse_events(e, area),
             _ => {}
         }
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        self.rect = area;
-
         let block = Block::default()
             .title("History")
             .borders(Borders::ALL)

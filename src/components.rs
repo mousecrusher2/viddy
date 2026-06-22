@@ -32,7 +32,7 @@ pub trait Component {
     /// # Arguments
     ///
     /// * `action` - An action that may modify the state of the component.
-    fn update(&mut self, action: Action) {}
+    fn update(&mut self, action: Action, area: Rect) {}
 
     /// Render the component on the screen. (REQUIRED)
     ///

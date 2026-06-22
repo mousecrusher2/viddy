@@ -482,8 +482,10 @@ impl<S: Store> App<S> {
                     }
                     _ => {}
                 }
+                let size = tui.size()?;
+                let area = Rect::new(0, 0, size.width, size.height);
                 for component in self.components.iter_mut() {
-                    component.update(action.clone())
+                    component.update(action.clone(), area)
                 }
             }
 

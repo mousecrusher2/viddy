@@ -128,7 +128,7 @@ fn display_key(key: &KeyEvent) -> String {
 }
 
 impl Component for Help {
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action, _area: Rect) {
         match action {
             Action::ShowHelp => self.reset_position(),
             Action::HelpScrollDown => self.scroll_down(),

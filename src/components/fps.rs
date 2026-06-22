@@ -59,7 +59,7 @@ impl FpsCounter {
 }
 
 impl Component for FpsCounter {
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action, _area: Rect) {
         if let Action::Tick = action {
             self.app_tick()
         };

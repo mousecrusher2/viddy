@@ -22,8 +22,6 @@ pub struct ExecutionResult {
     y_area_size: u16,
     y_max_scroll_size: u16,
     fold: bool,
-
-    rect: Rect,
 }
 
 impl ExecutionResult {
@@ -36,7 +34,6 @@ impl ExecutionResult {
             y_max_scroll_size: 0,
             x_position: 0,
             y_position: 0,
-            rect: Rect::default(),
         }
     }
 
@@ -88,8 +85,8 @@ impl ExecutionResult {
         self.fold = is_fold;
     }
 
-    fn handle_mouse_events(&mut self, event: MouseEvent) {
-        if !self.rect.contains(Position {
+    fn handle_mouse_events(&mut self, event: MouseEvent, area: Rect) {
+        if !area.contains(Position {
             x: event.column,
             y: event.row,
         }) {
@@ -123,7 +120,7 @@ fn scrollable_size(content_size: usize, viewport_size: u16) -> u16 {
 }
 
 impl Component for ExecutionResult {
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action, area: Rect) {
         match action {
             Action::SetResult(result) => self.set_result(result),
             Action::ResultScrollDown => self.scroll_down(),
@@ -137,14 +134,12 @@ impl Component for ExecutionResult {
             Action::SetFold(is_fold) => self.set_fold(is_fold),
             Action::BottomOfPage => self.bottom_of_page(),
             Action::TopOfPage => self.top_of_page(),
-            Action::MouseEvent(e) => self.handle_mouse_events(e),
+            Action::MouseEvent(e) => self.handle_mouse_events(e, area),
             _ => {}
         }
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        self.rect = area;
-
         let text = self.result.clone().unwrap_or(Text::new(""));
         let mut current = text.to_string();
         let mut y_max;

@@ -17,7 +17,7 @@ impl Clock {
 }
 
 impl Component for Clock {
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action, _area: Rect) {
         if let Action::SetClock(datetime) = action {
             self.time = Some(datetime);
         }

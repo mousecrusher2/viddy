@@ -63,59 +63,8 @@ impl Home {
     fn set_timemachine_mode(&mut self, timemachine_mode: bool) {
         self.timemachine_mode = timemachine_mode;
     }
-}
 
-impl Component for Home {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
-        self.command_component.register_action_handler(tx.clone());
-        self.interval_component.register_action_handler(tx.clone());
-        self.clock_component.register_action_handler(tx.clone());
-        self.execution_result_component
-            .register_action_handler(tx.clone());
-        self.history_component.register_action_handler(tx.clone());
-        self.prompt_component.register_action_handler(tx.clone());
-        self.status_component.register_action_handler(tx.clone());
-        self.help_component.register_action_handler(tx.clone());
-    }
-
-    fn update(&mut self, action: Action) {
-        match action {
-            Action::SetMode(mode) => self.set_mode(mode),
-            Action::SetTimemachineMode(timemachine_mode) => {
-                self.set_timemachine_mode(timemachine_mode)
-            }
-            Action::IncreaseInterval => {
-                self.interval_component.increase_interval();
-            }
-            Action::DecreaseInterval => {
-                self.interval_component.decrease_interval();
-            }
-            Action::SetNoTitle(is_no_title) => self.is_no_title = is_no_title,
-            _ => {}
-        }
-
-        self.clock_component.update(action.clone());
-        self.command_component.update(action.clone());
-        self.interval_component.update(action.clone());
-        self.execution_result_component.update(action.clone());
-        self.history_component.update(action.clone());
-        self.prompt_component.update(action.clone());
-        self.status_component.update(action.clone());
-        self.help_component.update(action.clone());
-    }
-
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        f.render_widget(
-            Block::new().style(self.config.get_style("background")),
-            area,
-        );
-
-        if self.mode == Mode::Help {
-            self.help_component.draw(f, area)?;
-
-            return Ok(());
-        }
-
+    fn child_areas(&self, area: Rect) -> (Rect, Rect, Rect, Rect, Rect, Rect, Rect) {
         let header_length = if self.is_no_title { 0 } else { 3 };
         let [header, middle, footer] = Layout::vertical([
             Constraint::Length(header_length),
@@ -131,21 +80,114 @@ impl Component for Home {
         ])
         .areas(header);
 
+        let [execution_result, history] = if self.timemachine_mode {
+            Layout::horizontal([Constraint::Fill(100), Constraint::Length(21)]).areas(middle)
+        } else {
+            [middle, Rect::default()]
+        };
+
+        let [prompt, status] =
+            Layout::horizontal([Constraint::Fill(100), Constraint::Length(32)]).areas(footer);
+
+        (
+            command,
+            interval,
+            clock,
+            execution_result,
+            history,
+            prompt,
+            status,
+        )
+    }
+}
+
+impl Component for Home {
+    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
+        self.command_component.register_action_handler(tx.clone());
+        self.interval_component.register_action_handler(tx.clone());
+        self.clock_component.register_action_handler(tx.clone());
+        self.execution_result_component
+            .register_action_handler(tx.clone());
+        self.history_component.register_action_handler(tx.clone());
+        self.prompt_component.register_action_handler(tx.clone());
+        self.status_component.register_action_handler(tx.clone());
+        self.help_component.register_action_handler(tx.clone());
+    }
+
+    fn update(&mut self, action: Action, area: Rect) {
+        match action {
+            Action::SetMode(mode) => self.set_mode(mode),
+            Action::SetTimemachineMode(timemachine_mode) => {
+                self.set_timemachine_mode(timemachine_mode)
+            }
+            Action::IncreaseInterval => {
+                self.interval_component.increase_interval();
+            }
+            Action::DecreaseInterval => {
+                self.interval_component.decrease_interval();
+            }
+            Action::SetNoTitle(is_no_title) => self.is_no_title = is_no_title,
+            _ => {}
+        }
+
+        let default_area = Rect::default();
+        let (command, interval, clock, execution_result, history, prompt, status) =
+            if self.mode == Mode::Help {
+                (
+                    default_area,
+                    default_area,
+                    default_area,
+                    default_area,
+                    default_area,
+                    default_area,
+                    default_area,
+                )
+            } else {
+                self.child_areas(area)
+            };
+        let help = if self.mode == Mode::Help {
+            area
+        } else {
+            default_area
+        };
+
+        self.clock_component.update(action.clone(), clock);
+        self.command_component.update(action.clone(), command);
+        self.interval_component.update(action.clone(), interval);
+        self.execution_result_component
+            .update(action.clone(), execution_result);
+        self.history_component.update(action.clone(), history);
+        self.prompt_component.update(action.clone(), prompt);
+        self.status_component.update(action.clone(), status);
+        self.help_component.update(action.clone(), help);
+    }
+
+    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+        f.render_widget(
+            Block::new().style(self.config.get_style("background")),
+            area,
+        );
+
+        if self.mode == Mode::Help {
+            self.help_component.draw(f, area)?;
+
+            return Ok(());
+        }
+
+        let (command, interval, clock, execution_result, history, prompt, status) =
+            self.child_areas(area);
+
         self.command_component.draw(f, command)?;
         self.interval_component.draw(f, interval)?;
         self.clock_component.draw(f, clock)?;
 
         if self.timemachine_mode {
-            let [execution_result, history] =
-                Layout::horizontal([Constraint::Fill(100), Constraint::Length(21)]).areas(middle);
             self.history_component.draw(f, history)?;
             self.execution_result_component.draw(f, execution_result)?;
         } else {
-            self.execution_result_component.draw(f, middle)?;
+            self.execution_result_component.draw(f, execution_result)?;
         }
 
-        let [prompt, status] =
-            Layout::horizontal([Constraint::Fill(100), Constraint::Length(32)]).areas(footer);
         self.prompt_component.draw(f, prompt)?;
         self.status_component.draw(f, status)?;
 
