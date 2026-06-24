@@ -19,8 +19,6 @@ pub struct ExecutionResult {
 
     x_position: u16,
     y_position: u16,
-    y_area_size: u16,
-    y_max_scroll_size: u16,
     fold: bool,
 }
 
@@ -30,8 +28,6 @@ impl ExecutionResult {
             config,
             result: None,
             fold,
-            y_area_size: 0,
-            y_max_scroll_size: 0,
             x_position: 0,
             y_position: 0,
         }
@@ -49,24 +45,35 @@ impl ExecutionResult {
         self.y_position = self.y_position.saturating_sub(1);
     }
 
-    fn page_up(&mut self) {
-        self.y_position = self.y_position.saturating_sub(self.y_area_size);
+    fn scroll_metrics(&self, area: Rect) -> (Rect, u16, u16) {
+        let text = self.result.clone().unwrap_or_else(|| Text::new(""));
+        let (_, x_max, y_max) = prepared_text(&text, self.fold, area);
+        scroll_metrics(x_max, y_max, area)
     }
 
-    fn page_down(&mut self) {
-        self.y_position = self.y_position.saturating_add(self.y_area_size);
+    fn page_up(&mut self, area: Rect) {
+        let (body, _, _) = self.scroll_metrics(area);
+        self.y_position = self.y_position.saturating_sub(body.height);
     }
 
-    fn half_page_up(&mut self) {
-        self.y_position = self.y_position.saturating_sub(self.y_area_size / 2);
+    fn page_down(&mut self, area: Rect) {
+        let (body, _, _) = self.scroll_metrics(area);
+        self.y_position = self.y_position.saturating_add(body.height);
     }
 
-    fn half_page_down(&mut self) {
-        self.y_position = self.y_position.saturating_add(self.y_area_size / 2);
+    fn half_page_up(&mut self, area: Rect) {
+        let (body, _, _) = self.scroll_metrics(area);
+        self.y_position = self.y_position.saturating_sub(body.height / 2);
     }
 
-    fn bottom_of_page(&mut self) {
-        self.y_position = self.y_max_scroll_size;
+    fn half_page_down(&mut self, area: Rect) {
+        let (body, _, _) = self.scroll_metrics(area);
+        self.y_position = self.y_position.saturating_add(body.height / 2);
+    }
+
+    fn bottom_of_page(&mut self, area: Rect) {
+        let (_, _, y_scrollable) = self.scroll_metrics(area);
+        self.y_position = y_scrollable;
     }
 
     fn top_of_page(&mut self) {
@@ -119,6 +126,52 @@ fn scrollable_size(content_size: usize, viewport_size: u16) -> u16 {
     u16::try_from(content_size.saturating_sub(viewport_size.into())).unwrap_or(u16::MAX)
 }
 
+fn prepared_text(text: &Text, fold: bool, area: Rect) -> (Text, usize, usize) {
+    if fold {
+        let mut x_max = area.width as usize;
+        let mut folded_text = fold_text(text, x_max);
+        let mut y_max = text_height(&folded_text);
+        if y_max > area.height.into() {
+            x_max = (area.width - 1) as usize;
+            folded_text = fold_text(text, x_max);
+            y_max = text_height(&folded_text);
+        }
+
+        (folded_text, x_max, y_max)
+    } else {
+        (text.clone(), text_width(text), text_height(text))
+    }
+}
+
+fn scroll_metrics(x_max: usize, y_max: usize, area: Rect) -> (Rect, u16, u16) {
+    let mut body = area;
+    let mut y_scrollable = scrollable_size(y_max, body.height);
+    let mut x_scrollable = scrollable_size(x_max, body.width);
+
+    if y_scrollable > 0 {
+        body.width = area.width.saturating_sub(1);
+        if x_max > body.width.into() {
+            x_scrollable = x_scrollable.saturating_add(1);
+        }
+    }
+
+    if x_scrollable > 0 {
+        body.height = area.height.saturating_sub(1);
+        if y_max > body.height.into() {
+            y_scrollable = y_scrollable.saturating_add(1);
+        }
+    }
+
+    if y_scrollable > 0 {
+        body.width = area.width.saturating_sub(1);
+        if x_max > body.width.into() {
+            x_scrollable = x_scrollable.saturating_add(1);
+        }
+    }
+
+    (body, x_scrollable, y_scrollable)
+}
+
 impl Component for ExecutionResult {
     fn update(&mut self, action: Action, area: Rect) {
         match action {
@@ -127,12 +180,12 @@ impl Component for ExecutionResult {
             Action::ResultScrollUp => self.scroll_up(),
             Action::ScrollRight => self.scroll_right(),
             Action::ScrollLeft => self.scroll_left(),
-            Action::ResultPageUp => self.page_up(),
-            Action::ResultPageDown => self.page_down(),
-            Action::ResultHalfPageDown => self.half_page_down(),
-            Action::ResultHalfPageUp => self.half_page_up(),
+            Action::ResultPageUp => self.page_up(area),
+            Action::ResultPageDown => self.page_down(area),
+            Action::ResultHalfPageDown => self.half_page_down(area),
+            Action::ResultHalfPageUp => self.half_page_up(area),
             Action::SetFold(is_fold) => self.set_fold(is_fold),
-            Action::BottomOfPage => self.bottom_of_page(),
+            Action::BottomOfPage => self.bottom_of_page(area),
             Action::TopOfPage => self.top_of_page(),
             Action::MouseEvent(e) => self.handle_mouse_events(e, area),
             _ => {}
@@ -140,36 +193,16 @@ impl Component for ExecutionResult {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        let text = self.result.clone().unwrap_or(Text::new(""));
-        let mut current = text.to_string();
-        let mut y_max;
-        let mut x_max;
+        let text = self.result.clone().unwrap_or_else(|| Text::new(""));
+        let (current, x_max, y_max) = prepared_text(&text, self.fold, area);
         if self.fold {
-            x_max = area.width as usize;
-            let folded_text = fold_text(&text, x_max);
-            current = folded_text.to_string();
-            y_max = text_height(&folded_text);
-            if y_max > area.height as usize {
-                x_max = (area.width - 1) as usize;
-                let folded_text = fold_text(&text, x_max);
-                current = folded_text.to_string();
-                y_max = text_height(&folded_text);
-            }
-
             self.x_position = 0;
-        } else {
-            x_max = text_width(&text);
-            y_max = text_height(&text);
         }
 
-        let mut body = area;
-
-        let mut y_scrollable = scrollable_size(y_max, body.height);
-        let mut x_scrollable = scrollable_size(x_max, body.width);
+        let (body, x_scrollable, y_scrollable) = scroll_metrics(x_max, y_max, area);
         let scroll_style = self.config.get_style("scrollbar");
 
         if y_scrollable > 0 {
-            body.width = area.width.saturating_sub(1);
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .symbols(scrollbar::VERTICAL)
                 .style(scroll_style)
@@ -177,13 +210,9 @@ impl Component for ExecutionResult {
             let mut scrollbar_state =
                 ScrollbarState::new(y_scrollable.into()).position(self.y_position.into());
             f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
-            if x_max > body.width.into() {
-                x_scrollable = x_scrollable.saturating_add(1);
-            }
         }
 
         if x_scrollable > 0 {
-            body.height = area.height.saturating_sub(1);
             let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
                 .symbols(scrollbar::HORIZONTAL)
                 .style(scroll_style)
@@ -191,23 +220,6 @@ impl Component for ExecutionResult {
             let mut scrollbar_state =
                 ScrollbarState::new(x_scrollable.into()).position(self.x_position.into());
             f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
-            if y_max > body.height.into() {
-                y_scrollable = y_scrollable.saturating_add(1);
-            }
-        }
-
-        if y_scrollable > 0 {
-            body.width = area.width.saturating_sub(1);
-            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .symbols(scrollbar::VERTICAL)
-                .style(scroll_style)
-                .thumb_symbol("║");
-            let mut scrollbar_state =
-                ScrollbarState::new(y_scrollable.into()).position(self.y_position.into());
-            f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
-            if x_max > body.width.into() {
-                x_scrollable = x_scrollable.saturating_add(1);
-            }
         }
 
         if self.x_position > x_scrollable {
@@ -218,12 +230,9 @@ impl Component for ExecutionResult {
             self.y_position = y_scrollable;
         }
 
-        let current = current.into_text()?;
+        let current = current.to_string().into_text()?;
         let paragraph = Paragraph::new(current).scroll((self.y_position, self.x_position));
         f.render_widget(paragraph, body);
-
-        self.y_max_scroll_size = y_scrollable;
-        self.y_area_size = body.height;
 
         Ok(())
     }
