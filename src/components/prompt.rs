@@ -10,7 +10,7 @@ use crate::action::Action;
 #[derive(Default)]
 pub struct Prompt {
     command_tx: Option<UnboundedSender<Action>>,
-    pub input: Input,
+    input: Input,
     is_searching: bool,
     is_inputtig: bool,
 }
