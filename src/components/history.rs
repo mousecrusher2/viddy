@@ -197,8 +197,8 @@ impl Component for History {
         self.command_tx = Some(tx);
     }
 
-    fn update(&mut self, action: Action, area: Rect) {
-        match action {
+    fn update(&mut self, action: &Action, area: Rect) {
+        match *action {
             Action::InsertHistory(id, start_time) => self.insert_history(id, start_time),
             Action::UpdateHistoryResult(id, diff, exit_code) => {
                 self.update_history_result(id, diff, exit_code)

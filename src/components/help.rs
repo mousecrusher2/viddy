@@ -14,7 +14,6 @@ use crate::{
 pub struct Help {
     keybindings: HashMap<(Mode, String), Vec<Vec<KeyEvent>>>,
     y_position: u16,
-    y_area_size: u16,
 }
 
 fn keys_str(
@@ -48,7 +47,6 @@ impl Help {
         Self {
             keybindings: get_action_keys(config.keybindings),
             y_position: 0,
-            y_area_size: 0,
         }
     }
 
@@ -60,20 +58,20 @@ impl Help {
         self.y_position = self.y_position.saturating_sub(1);
     }
 
-    fn page_up(&mut self) {
-        self.y_position = self.y_position.saturating_sub(self.y_area_size);
+    fn page_up(&mut self, area: Rect) {
+        self.y_position = self.y_position.saturating_sub(area.height);
     }
 
-    fn page_down(&mut self) {
-        self.y_position = self.y_position.saturating_add(self.y_area_size);
+    fn page_down(&mut self, area: Rect) {
+        self.y_position = self.y_position.saturating_add(area.height);
     }
 
-    fn half_page_up(&mut self) {
-        self.y_position = self.y_position.saturating_sub(self.y_area_size / 2);
+    fn half_page_up(&mut self, area: Rect) {
+        self.y_position = self.y_position.saturating_sub(area.height / 2);
     }
 
-    fn half_page_down(&mut self) {
-        self.y_position = self.y_position.saturating_add(self.y_area_size / 2);
+    fn half_page_down(&mut self, area: Rect) {
+        self.y_position = self.y_position.saturating_add(area.height / 2);
     }
 
     fn reset_position(&mut self) {
@@ -128,15 +126,15 @@ fn display_key(key: &KeyEvent) -> String {
 }
 
 impl Component for Help {
-    fn update(&mut self, action: Action, _area: Rect) {
+    fn update(&mut self, action: &Action, area: Rect) {
         match action {
             Action::ShowHelp => self.reset_position(),
             Action::HelpScrollDown => self.scroll_down(),
             Action::HelpScrollUp => self.scroll_up(),
-            Action::HelpPageDown => self.page_down(),
-            Action::HelpPageUp => self.page_up(),
-            Action::HelpHalfPageDown => self.half_page_down(),
-            Action::HelpHalfPageUp => self.half_page_up(),
+            Action::HelpPageDown => self.page_down(area),
+            Action::HelpPageUp => self.page_up(area),
+            Action::HelpHalfPageDown => self.half_page_down(area),
+            Action::HelpHalfPageUp => self.half_page_up(area),
             _ => {}
         }
     }
@@ -370,7 +368,6 @@ impl Component for Help {
         let paragraph = Paragraph::new(Text::from(lines)).scroll((self.y_position, 0));
         f.render_widget(paragraph, area);
 
-        self.y_area_size = area.height;
         Ok(())
     }
 }
@@ -417,5 +414,19 @@ mod tests {
             Span::styled("<b><c>", Style::default().fg(Color::Yellow)),
         ];
         assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_page_navigation_uses_current_area() {
+        let mut help = Help {
+            keybindings: HashMap::new(),
+            y_position: 10,
+        };
+
+        help.update(&Action::HelpPageUp, Rect::new(0, 0, 0, 3));
+        assert_eq!(help.y_position, 7);
+
+        help.update(&Action::HelpHalfPageDown, Rect::new(0, 0, 0, 6));
+        assert_eq!(help.y_position, 10);
     }
 }

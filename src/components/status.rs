@@ -37,8 +37,8 @@ impl Status {
 }
 
 impl Component for Status {
-    fn update(&mut self, action: Action, _area: Rect) {
-        match action {
+    fn update(&mut self, action: &Action, _area: Rect) {
+        match *action {
             Action::SetFold(is_fold) => self.is_fold = is_fold,
             Action::SetDiff(diff_mode) => self.diff_mode = diff_mode,
             Action::SetBell(is_bell) => self.is_bell = is_bell,

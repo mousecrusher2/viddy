@@ -59,7 +59,7 @@ impl FpsCounter {
 }
 
 impl Component for FpsCounter {
-    fn update(&mut self, action: Action, _area: Rect) {
+    fn update(&mut self, action: &Action, _area: Rect) {
         match action {
             Action::Tick => self.app_tick(),
             Action::Render => self.render_tick(),

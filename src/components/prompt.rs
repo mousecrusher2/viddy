@@ -65,8 +65,8 @@ impl Component for Prompt {
         self.command_tx = Some(tx);
     }
 
-    fn update(&mut self, action: Action, _area: Rect) {
-        match action {
+    fn update(&mut self, action: &Action, _area: Rect) {
+        match *action {
             Action::EnterSearchMode => self.enter_search_mode(),
             Action::KeyEventForPrompt(key_event) => self.handle_key_event(key_event),
             Action::ExecuteSearch => self.execute_search(),

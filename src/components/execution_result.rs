@@ -46,8 +46,9 @@ impl ExecutionResult {
     }
 
     fn scroll_metrics(&self, area: Rect) -> (Rect, u16, u16) {
-        let text = self.result.clone().unwrap_or_default();
-        let (_, x_max, y_max) = prepared_text(&text, self.fold, area);
+        let empty = Text::default();
+        let text = self.result.as_ref().unwrap_or(&empty);
+        let (_, x_max, y_max) = prepared_text(text, self.fold, area);
         scroll_metrics(x_max, y_max, area)
     }
 
@@ -173,9 +174,9 @@ fn scroll_metrics(x_max: usize, y_max: usize, area: Rect) -> (Rect, u16, u16) {
 }
 
 impl Component for ExecutionResult {
-    fn update(&mut self, action: Action, area: Rect) {
-        match action {
-            Action::SetResult(result) => self.set_result(result),
+    fn update(&mut self, action: &Action, area: Rect) {
+        match *action {
+            Action::SetResult(ref result) => self.set_result(result.clone()),
             Action::ResultScrollDown => self.scroll_down(),
             Action::ResultScrollUp => self.scroll_up(),
             Action::ScrollRight => self.scroll_right(),
@@ -193,8 +194,9 @@ impl Component for ExecutionResult {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        let text = self.result.clone().unwrap_or_default();
-        let (current, x_max, y_max) = prepared_text(&text, self.fold, area);
+        let empty = Text::default();
+        let text = self.result.as_ref().unwrap_or(&empty);
+        let (current, x_max, y_max) = prepared_text(text, self.fold, area);
         if self.fold {
             self.x_position = 0;
         }

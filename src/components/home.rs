@@ -114,8 +114,8 @@ impl Component for Home {
         self.help_component.register_action_handler(tx);
     }
 
-    fn update(&mut self, action: Action, area: Rect) {
-        match action {
+    fn update(&mut self, action: &Action, area: Rect) {
+        match *action {
             Action::SetMode(mode) => self.set_mode(mode),
             Action::SetTimemachineMode(timemachine_mode) => {
                 self.set_timemachine_mode(timemachine_mode)
@@ -151,14 +151,14 @@ impl Component for Home {
             default_area
         };
 
-        self.clock_component.update(action.clone(), clock);
-        self.command_component.update(action.clone(), command);
-        self.interval_component.update(action.clone(), interval);
+        self.clock_component.update(action, clock);
+        self.command_component.update(action, command);
+        self.interval_component.update(action, interval);
         self.execution_result_component
-            .update(action.clone(), execution_result);
-        self.history_component.update(action.clone(), history);
-        self.prompt_component.update(action.clone(), prompt);
-        self.status_component.update(action.clone(), status);
+            .update(action, execution_result);
+        self.history_component.update(action, history);
+        self.prompt_component.update(action, prompt);
+        self.status_component.update(action, status);
         self.help_component.update(action, help);
     }
 
