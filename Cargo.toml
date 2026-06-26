@@ -49,7 +49,7 @@ tui-widget-list = "0.15.2"
 unicode-segmentation = "1.13.3"
 
 [build-dependencies]
-vergen-gix = { version = "9.0.0", features = ["build", "cargo"] }
+vergen-gix = { version = "10.0.1", features = ["build", "cargo"] }
 
 [dev-dependencies]
 ansi-parser = "0.9.1"

@@ -1,9 +1,10 @@
-use vergen_gix::{BuildBuilder, Emitter, GixBuilder};
+use vergen_gix::{Build, Emitter, Gix};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     Emitter::default()
-        .add_instructions(&BuildBuilder::all_build()?)?
-        .add_instructions(&GixBuilder::all_git()?)?
+        .default_on_error()
+        .add_instructions(&Build::all_build())?
+        .add_instructions(&Gix::all_git())?
         .emit()?;
     Ok(())
 }
