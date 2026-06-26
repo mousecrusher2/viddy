@@ -43,13 +43,13 @@ impl Text {
         self.chars.push(c);
     }
 
-    pub fn lines(&self) -> Vec<Text> {
+    pub fn lines(&self) -> Vec<Self> {
         let mut lines = Vec::new();
-        let mut line = Text::new("");
-        for c in self.chars.iter() {
+        let mut line = Self::new("");
+        for c in &self.chars {
             if c.c == '\n' {
                 lines.push(line.clone());
-                line = Text::new("");
+                line = Self::new("");
             } else {
                 line.add_char(*c);
             }
@@ -115,7 +115,7 @@ impl Converter {
 
     pub fn convert(&self, text: &[u8]) -> Text {
         let mut statemachine = Parser::<DefaultCharAccumulator>::new();
-        let mut performer = Converter::new(self.style);
+        let mut performer = Self::new(self.style);
 
         let bytes = text.bytes();
         for c in bytes {
@@ -224,7 +224,6 @@ impl Perform for Converter {
                     .style
                     .effects(self.style.get_effects().remove(Effects::BLINK))
             }
-            Some([27]) => {}
             Some([28]) => {
                 self.style = self
                     .style

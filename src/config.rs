@@ -110,26 +110,22 @@ impl Config {
     }
 
     pub fn defaulting(&mut self) {
-        let default_config: Config = json5::from_str(CONFIG).unwrap();
+        let default_config: Self = json5::from_str(CONFIG).unwrap();
 
         let current_binding_actions = self
             .keybindings
             .iter()
             .flat_map(|(mode, bindings)| {
-                let actions = bindings
-                    .iter()
-                    .map(|(keys, action)| (keys.clone(), action.clone()))
-                    .collect::<HashMap<_, _>>();
-                actions
-                    .into_values()
-                    .map(|action| (*mode, action))
-                    .collect::<Vec<_>>()
+                bindings
+                    .values()
+                    .cloned()
+                    .map(move |action| (*mode, action))
             })
             .collect::<Vec<_>>();
 
-        for (mode, default_bindings) in default_config.keybindings.iter() {
+        for (mode, default_bindings) in &default_config.keybindings.0 {
             let user_bindings = self.keybindings.entry(*mode).or_default();
-            for (key, cmd) in default_bindings.iter() {
+            for (key, cmd) in default_bindings {
                 if current_binding_actions
                     .iter()
                     .any(|(m, a)| m == mode && a == cmd)
@@ -143,9 +139,9 @@ impl Config {
             }
         }
 
-        for (mode, default_styles) in default_config.styles.iter() {
+        for (mode, default_styles) in &default_config.styles.0 {
             let user_styles = self.styles.entry(*mode).or_default();
-            for (style_key, style) in default_styles.iter() {
+            for (style_key, style) in default_styles {
                 user_styles
                     .entry(style_key.clone())
                     .or_insert_with(|| *style);
@@ -196,7 +192,7 @@ impl From<OldConfig> for Config {
         let wrap = |s: &str| {
             s.trim()
                 .split(" ")
-                .map(|s| format!("<{}>", s))
+                .map(|s| format!("<{s}>"))
                 .collect::<Vec<_>>()
                 .join("")
         };
@@ -233,11 +229,11 @@ impl From<OldConfig> for Config {
         if let Some(bg) = color.background
             && !bg.is_empty()
         {
-            all_styles.insert("background".to_string(), parse_style(&format!("on {}", bg)));
+            all_styles.insert("background".to_string(), parse_style(&format!("on {bg}")));
         }
         styles.insert(Mode::All, all_styles);
 
-        Config {
+        Self {
             keybindings: KeyBindings(keybindings),
             styles: Styles(styles),
             general: General::from(general),
@@ -267,7 +263,7 @@ impl<'de> Deserialize<'de> for KeyBindings {
             })
             .collect();
 
-        Ok(KeyBindings(keybindings))
+        Ok(Self(keybindings))
     }
 }
 
@@ -296,7 +292,7 @@ fn extract_modifiers(raw: &str) -> (&str, KeyModifiers) {
                 current = &rest[6..];
             }
             _ => break, // break out of the loop if no known prefix is detected
-        };
+        }
     }
 
     (current, modifiers)
@@ -337,8 +333,7 @@ fn parse_key_code_with_modifiers(
         "f11" => KeyCode::F(11),
         "f12" => KeyCode::F(12),
         "space" => KeyCode::Char(' '),
-        "hyphen" => KeyCode::Char('-'),
-        "minus" => KeyCode::Char('-'),
+        "hyphen" | "minus" => KeyCode::Char('-'),
         "tab" => KeyCode::Tab,
         c if c.len() == 1 => {
             let mut c = c.chars().next().unwrap();
@@ -379,16 +374,16 @@ pub fn key_event_to_string(key_event: &KeyEvent) -> String {
             &char
         }
         KeyCode::Esc => "esc",
-        KeyCode::Null => "",
-        KeyCode::CapsLock => "",
-        KeyCode::Menu => "",
-        KeyCode::ScrollLock => "",
-        KeyCode::Media(_) => "",
-        KeyCode::NumLock => "",
-        KeyCode::PrintScreen => "",
-        KeyCode::Pause => "",
-        KeyCode::KeypadBegin => "",
-        KeyCode::Modifier(_) => "",
+        KeyCode::Null
+        | KeyCode::CapsLock
+        | KeyCode::Menu
+        | KeyCode::ScrollLock
+        | KeyCode::Media(_)
+        | KeyCode::NumLock
+        | KeyCode::PrintScreen
+        | KeyCode::Pause
+        | KeyCode::KeypadBegin
+        | KeyCode::Modifier(_) => "",
     };
 
     let mut modifiers = Vec::with_capacity(3);
@@ -417,7 +412,7 @@ pub fn key_event_to_string(key_event: &KeyEvent) -> String {
 
 pub fn parse_key_sequence(raw: &str) -> Result<Vec<KeyEvent>, String> {
     if raw.chars().filter(|c| *c == '>').count() != raw.chars().filter(|c| *c == '<').count() {
-        return Err(format!("Unable to parse `{}`", raw));
+        return Err(format!("Unable to parse `{raw}`"));
     }
     let raw = if !raw.contains("><") {
         let raw = raw.strip_prefix('<').unwrap_or(raw);
@@ -425,8 +420,7 @@ pub fn parse_key_sequence(raw: &str) -> Result<Vec<KeyEvent>, String> {
     } else {
         raw
     };
-    let sequences = raw
-        .split("><")
+    raw.split("><")
         .map(|seq| {
             if let Some(s) = seq.strip_prefix('<') {
                 s
@@ -436,9 +430,8 @@ pub fn parse_key_sequence(raw: &str) -> Result<Vec<KeyEvent>, String> {
                 seq
             }
         })
-        .collect::<Vec<_>>();
-
-    sequences.into_iter().map(parse_key_event).collect()
+        .map(parse_key_event)
+        .collect()
 }
 
 #[derive(Clone, Debug, Default, Deref, DerefMut)]
@@ -462,7 +455,7 @@ impl<'de> Deserialize<'de> for Styles {
             })
             .collect();
 
-        Ok(Styles(styles))
+        Ok(Self(styles))
     }
 }
 
@@ -506,8 +499,7 @@ fn process_color_string(color_str: &str) -> (String, Modifier) {
 }
 
 fn parse_color(s: &str) -> Option<Color> {
-    let s = s.trim_start();
-    let s = s.trim_end();
+    let s = s.trim();
     if s.contains("bright color") {
         let s = s.trim_start_matches("bright ");
         let c = s
@@ -721,10 +713,10 @@ mod tests {
 
     #[test]
     fn test_old_config_defaulting() {
-        let config_str = r#"
+        let config_str = r"
     [general]
     skip_empty_diffs = true
-    "#;
+    ";
 
         let config = OldConfig::new_from_str(config_str).unwrap();
         let mut config = Config::from(config);

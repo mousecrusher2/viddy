@@ -211,7 +211,7 @@ impl<S: Store> App<S> {
         tui = tui.mouse(!self.disable_mouse);
         tui.enter()?;
 
-        for component in self.components.iter_mut() {
+        for component in &mut self.components {
             component.register_action_handler(action_tx.clone());
         }
 
@@ -245,7 +245,7 @@ impl<S: Store> App<S> {
                                     action_tx.send(action.clone())?;
                                 }
                             }
-                        };
+                        }
                     }
                 }
             }
@@ -290,11 +290,11 @@ impl<S: Store> App<S> {
                     Action::Resize(w, h) => {
                         tui.resize(Rect::new(0, 0, w, h))?;
                         tui.draw(|f| {
-                            for component in self.components.iter_mut() {
+                            for component in &mut self.components {
                                 let r = component.draw(f, f.area());
                                 if let Err(e) = r {
                                     action_tx
-                                        .send(Action::Error(format!("Failed to draw: {:?}", e)))
+                                        .send(Action::Error(format!("Failed to draw: {e:?}")))
                                         .unwrap();
                                 }
                             }
@@ -302,11 +302,11 @@ impl<S: Store> App<S> {
                     }
                     Action::Render => {
                         tui.draw(|f| {
-                            for component in self.components.iter_mut() {
+                            for component in &mut self.components {
                                 let r = component.draw(f, f.area());
                                 if let Err(e) = r {
                                     action_tx
-                                        .send(Action::Error(format!("Failed to draw: {:?}", e)))
+                                        .send(Action::Error(format!("Failed to draw: {e:?}")))
                                         .unwrap();
                                 }
                             }
@@ -343,7 +343,7 @@ impl<S: Store> App<S> {
                         let style =
                             termtext::convert_to_anstyle(self.config.get_style("background"));
                         let record = self.store.get_record(id)?;
-                        let mut string = "".to_string();
+                        let mut string = String::new();
                         if let Some(record) = record {
                             action_tx.send(Action::SetClock(record.start_time))?;
                             let mut result = termtext::Converter::new(style)
@@ -405,14 +405,11 @@ impl<S: Store> App<S> {
                             action_tx.send(Action::ShowExecution(latest_id, latest_id))?;
                         }
                     }
-                    Action::ExecuteSearch => {
+                    Action::ExecuteSearch | Action::ExitSearchMode | Action::ExitHelp => {
                         action_tx.send(Action::SetMode(Mode::All))?;
                     }
                     Action::EnterSearchMode => {
                         action_tx.send(Action::SetMode(Mode::Search))?;
-                    }
-                    Action::ExitSearchMode => {
-                        action_tx.send(Action::SetMode(Mode::All))?;
                     }
                     Action::SwitchFold => {
                         action_tx.send(Action::SetFold(!self.is_fold))?;
@@ -474,9 +471,6 @@ impl<S: Store> App<S> {
                     Action::ShowHelp => {
                         action_tx.send(Action::SetMode(Mode::Help))?;
                     }
-                    Action::ExitHelp => {
-                        action_tx.send(Action::SetMode(Mode::All))?;
-                    }
                     Action::SetMode(mode) => {
                         self.set_mode(mode);
                     }
@@ -484,7 +478,7 @@ impl<S: Store> App<S> {
                 }
                 let size = tui.size()?;
                 let area = Rect::new(0, 0, size.width, size.height);
-                for component in self.components.iter_mut() {
+                for component in &mut self.components {
                     component.update(action.clone(), area)
                 }
             }

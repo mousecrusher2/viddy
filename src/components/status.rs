@@ -60,14 +60,7 @@ impl Component for Status {
             },
         )];
         if self.diff_mode.is_some() {
-            status.push(Span::styled(
-                " [D]iff",
-                if self.diff_mode.is_some() {
-                    enabled_style
-                } else {
-                    disabled_style
-                },
-            ));
+            status.push(Span::styled(" [D]iff", enabled_style));
             status.push(match self.diff_mode {
                 Some(DiffMode::Add) => Span::styled("+", Style::new().fg(Color::Green).bold()),
                 Some(DiffMode::Delete) => Span::styled("-", Style::new().fg(Color::Red).bold()),
@@ -75,7 +68,7 @@ impl Component for Status {
             });
         } else {
             status.push(Span::styled(" [D]iff±", disabled_style));
-        };
+        }
 
         if !self.read_only {
             status.push(Span::styled(

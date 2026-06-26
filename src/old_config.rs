@@ -52,7 +52,7 @@ pub struct Color {
 
 impl OldConfig {
     pub fn new_from_str(s: &str) -> Result<Self> {
-        let config: OldConfig = toml::from_str(s)?;
+        let config: Self = toml::from_str(s)?;
         Ok(config)
     }
 
@@ -60,7 +60,7 @@ impl OldConfig {
         let config_dir = utils::get_old_config_dir();
         let file_path = config_dir.join("viddy.toml");
         let config_str = std::fs::read_to_string(file_path)?;
-        let config = OldConfig::new_from_str(&config_str)?;
+        let config = Self::new_from_str(&config_str)?;
         Ok(config)
     }
 }
@@ -80,11 +80,11 @@ background = "white"
 
     #[test]
     fn test_old_config_skip_empty_diffs() {
-        let config_str = r#"
+        let config_str = r"
 [general]
 skip_empty_diffs = true
 disable_mouse = true
-"#;
+";
         let config = super::OldConfig::new_from_str(config_str).unwrap();
         let general = config.general.unwrap();
         assert_eq!(general.skip_empty_diffs, Some(true));

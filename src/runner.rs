@@ -20,7 +20,7 @@ pub async fn run_executor<S: Store>(
     is_suspend: Arc<Mutex<bool>>,
 ) -> Result<()> {
     let latest_id = store.get_latest_id()?;
-    let mut counter = latest_id.map(|id| id.0 + 1).unwrap_or(0);
+    let mut counter = latest_id.map_or(0, |id| id.0 + 1);
     loop {
         counter += 1;
         if *is_suspend.lock().unwrap() {
@@ -31,23 +31,22 @@ pub async fn run_executor<S: Store>(
         let id = ExecutionId(counter);
         let start_time = chrono::Local::now();
         if let Err(e) = actions.send(Action::StartExecution(id, start_time)) {
-            eprintln!("Failed to send start: {:?}", e);
+            eprintln!("Failed to send start: {e:?}");
         }
 
         let result = exec(runtime_config.command.clone(), shell.clone()).await;
-        let (stdout, stderr, status) = match result {
+        let (stdout, stderr, exit_code) = match result {
             Ok(result) => result,
-            Err(e) => (vec![], e.to_string().bytes().collect(), 1),
+            Err(e) => (Vec::new(), e.to_string().into_bytes(), 1),
         };
 
-        let exit_code = status;
-        let utf8_stdout = String::from_utf8_lossy(&stdout).to_string();
+        let utf8_stdout = String::from_utf8_lossy(&stdout).into_owned();
         let end_time = chrono::Local::now();
 
         let latest_id = store.get_latest_id()?;
         let diff = if let Some(latest_id) = latest_id {
             if let Some(record) = store.get_record(latest_id)? {
-                let old_stdout = String::from_utf8_lossy(&record.stdout).to_string();
+                let old_stdout = String::from_utf8_lossy(&record.stdout).into_owned();
                 Some(count_diff(&old_stdout, &utf8_stdout))
             } else {
                 None
@@ -60,7 +59,7 @@ pub async fn run_executor<S: Store>(
             && (diff_add != 0 || diff_delete != 0)
             && let Err(e) = actions.send(Action::DiffDetected)
         {
-            eprintln!("Failed to send diff detected: {:?}", e);
+            eprintln!("Failed to send diff detected: {e:?}");
         }
 
         let record = Record {
@@ -76,13 +75,13 @@ pub async fn run_executor<S: Store>(
         store.add_record(record)?;
 
         if let Err(e) = actions.send(Action::FinishExecution(id, start_time, diff, exit_code)) {
-            eprintln!("Failed to send result: {:?}", e);
+            eprintln!("Failed to send result: {e:?}");
         }
 
-        let interval = store
-            .get_runtime_config()?
-            .map(|config| config.interval)
-            .unwrap_or(runtime_config.interval.num_milliseconds() as u64);
+        let interval = store.get_runtime_config()?.map_or(
+            runtime_config.interval.num_milliseconds() as u64,
+            |config| config.interval,
+        );
 
         tokio::time::sleep(std::time::Duration::from_millis(interval)).await;
     }
@@ -96,7 +95,7 @@ pub async fn run_executor_precise<S: Store>(
     is_suspend: Arc<Mutex<bool>>,
 ) -> Result<()> {
     let latest_id = store.get_latest_id()?;
-    let mut counter = latest_id.map(|id| id.0 + 1).unwrap_or(0);
+    let mut counter = latest_id.map_or(0, |id| id.0 + 1);
     loop {
         counter += 1;
         let start_time = chrono::Local::now();
@@ -107,23 +106,22 @@ pub async fn run_executor_precise<S: Store>(
 
         let id = ExecutionId(counter);
         if let Err(e) = actions.send(Action::StartExecution(id, start_time)) {
-            eprintln!("Failed to send start: {:?}", e);
+            eprintln!("Failed to send start: {e:?}");
         }
 
         let result = exec(runtime_config.command.clone(), shell.clone()).await;
-        let (stdout, stderr, status) = match result {
+        let (stdout, stderr, exit_code) = match result {
             Ok(result) => result,
-            Err(e) => (vec![], e.to_string().bytes().collect(), 1),
+            Err(e) => (Vec::new(), e.to_string().into_bytes(), 1),
         };
 
-        let exit_code = status;
-        let utf8_stdout = String::from_utf8_lossy(&stdout).to_string();
+        let utf8_stdout = String::from_utf8_lossy(&stdout).into_owned();
         let end_time = chrono::Local::now();
 
         let latest_id = store.get_latest_id()?;
         let diff = if let Some(latest_id) = latest_id {
             if let Some(record) = store.get_record(latest_id)? {
-                let old_stdout = String::from_utf8_lossy(&record.stdout).to_string();
+                let old_stdout = String::from_utf8_lossy(&record.stdout).into_owned();
                 Some(count_diff(&old_stdout, &utf8_stdout))
             } else {
                 None
@@ -136,7 +134,7 @@ pub async fn run_executor_precise<S: Store>(
             && (diff_add != 0 || diff_delete != 0)
             && let Err(e) = actions.send(Action::DiffDetected)
         {
-            eprintln!("Failed to send diff detected: {:?}", e);
+            eprintln!("Failed to send diff detected: {e:?}");
         }
 
         let record = Record {
@@ -152,15 +150,15 @@ pub async fn run_executor_precise<S: Store>(
         store.add_record(record)?;
 
         if let Err(e) = actions.send(Action::FinishExecution(id, start_time, diff, exit_code)) {
-            eprintln!("Failed to send result: {:?}", e);
+            eprintln!("Failed to send result: {e:?}");
         }
 
         let elapased = chrono::Local::now().signed_duration_since(start_time);
 
-        let interval = store
-            .get_runtime_config()?
-            .map(|config| config.interval)
-            .unwrap_or(runtime_config.interval.num_milliseconds() as u64);
+        let interval = store.get_runtime_config()?.map_or(
+            runtime_config.interval.num_milliseconds() as u64,
+            |config| config.interval,
+        );
 
         let interval = std::time::Duration::from_millis(interval);
 

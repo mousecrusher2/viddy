@@ -83,10 +83,10 @@ impl Component for Prompt {
             ));
         }
 
-        let input = if !self.is_searching {
-            String::new()
-        } else {
+        let input = if self.is_searching {
             format!("/{}", self.input.value())
+        } else {
+            String::new()
         };
         let paragraph = Paragraph::new(input);
         f.render_widget(paragraph, area);

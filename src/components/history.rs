@@ -89,7 +89,7 @@ impl History {
     fn select_latest(&mut self) {
         let index_to_select = self.items.iter().enumerate().find_map(|(i, item)| {
             let item = item.borrow();
-            if !item.is_running { Some(i) } else { None }
+            (!item.is_running).then_some(i)
         });
 
         self.select(index_to_select)
@@ -176,7 +176,7 @@ impl History {
     }
 
     fn handle_mouse_events(&mut self, event: MouseEvent, area: Rect) {
-        log::debug!("Mouse event: {:?}", event);
+        log::debug!("Mouse event: {event:?}");
         if !area.contains(Position {
             x: event.column,
             y: event.row,
@@ -232,7 +232,7 @@ impl Component for History {
         let builder = ListBuilder::new(|context| {
             let mut item = items[context.index].clone();
             let height = item.get_height_and_set_context(context);
-            (item.clone(), height)
+            (item, height)
         });
         let list = ListView::new(builder, items.len()).block(block);
 

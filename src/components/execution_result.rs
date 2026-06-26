@@ -46,7 +46,7 @@ impl ExecutionResult {
     }
 
     fn scroll_metrics(&self, area: Rect) -> (Rect, u16, u16) {
-        let text = self.result.clone().unwrap_or_else(|| Text::new(""));
+        let text = self.result.clone().unwrap_or_default();
         let (_, x_max, y_max) = prepared_text(&text, self.fold, area);
         scroll_metrics(x_max, y_max, area)
     }
@@ -193,7 +193,7 @@ impl Component for ExecutionResult {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        let text = self.result.clone().unwrap_or_else(|| Text::new(""));
+        let text = self.result.clone().unwrap_or_default();
         let (current, x_max, y_max) = prepared_text(&text, self.fold, area);
         if self.fold {
             self.x_position = 0;
@@ -308,10 +308,10 @@ mod tests {
 
     #[test]
     fn test_fold_text_long() {
-        let str = r#"use std::{collections::HashMap, time::Duration};
+        let str = r"use std::{collections::HashMap, time::Duration};
 use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
-    "#;
+    ";
         let text = Text::new(str);
 
         let result = fold_text(&text, 97);

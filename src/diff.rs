@@ -10,7 +10,7 @@ pub fn diff_and_mark(current: &str, previous: &str, text: &mut Text) {
     let chunks = diff(previous, current);
 
     let mut cursor = 0;
-    for chunk in chunks.into_iter() {
+    for chunk in chunks {
         match chunk {
             Chunk::Equal(s) => {
                 cursor += s.chars().count();

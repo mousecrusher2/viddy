@@ -55,7 +55,7 @@ impl HistoryItem {
     pub fn get_height_and_set_context(&mut self, context: &ListBuildContext) -> u16 {
         if context.is_selected {
             self.style = self.selector_style;
-        };
+        }
 
         1
     }
@@ -69,7 +69,7 @@ impl Widget for HistoryItem {
             Style::default().fg(Color::White)
         };
 
-        let mut spans = vec![];
+        let mut spans = Vec::new();
         spans.push(if self.interval >= Duration::seconds(1) {
             Span::raw(self.start_time.format("%H:%M:%S").to_string()).style(time_style)
         } else {
@@ -87,26 +87,22 @@ impl Widget for HistoryItem {
 
         let exit_code = self.exit_code.unwrap_or_default();
         if exit_code > 0 {
-            let exit_code = Span::styled(
-                format!(" E({})", exit_code),
-                Style::default().fg(Color::Red),
-            );
+            let exit_code =
+                Span::styled(format!(" E({exit_code})"), Style::default().fg(Color::Red));
             spans.push(exit_code);
         } else {
             match self.diff {
                 Some((0, 0)) => spans.push(Span::styled(" ±0", self.secondary_text_style)),
                 Some((diff_add, diff_delete)) => {
                     let add =
-                        Span::styled(format!(" +{}", diff_add), Style::default().fg(Color::Green));
-                    let delete = Span::styled(
-                        format!(" -{}", diff_delete),
-                        Style::default().fg(Color::Red),
-                    );
+                        Span::styled(format!(" +{diff_add}"), Style::default().fg(Color::Green));
+                    let delete =
+                        Span::styled(format!(" -{diff_delete}"), Style::default().fg(Color::Red));
                     spans.push(add);
                     spans.push(delete);
                 }
                 _ => (),
-            };
+            }
         }
 
         if self.count > 1 {

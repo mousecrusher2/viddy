@@ -12,7 +12,7 @@ pub fn normalize_stdout(s: &[u8]) -> Vec<u8> {
         IgnoredControl,
     }
 
-    let str = String::from_utf8_lossy(s).to_string();
+    let str = String::from_utf8_lossy(s).into_owned();
     let mut chars = str.chars();
     let mut items = Vec::new();
     let mut visible = String::new();
@@ -76,7 +76,7 @@ pub fn normalize_stdout(s: &[u8]) -> Vec<u8> {
             }
             _ => GraphemeKind::Text,
         };
-        let width = if let GraphemeKind::Text = kind {
+        let width = if matches!(kind, GraphemeKind::Text) {
             grapheme.cell_width() as usize
         } else {
             0
@@ -95,7 +95,7 @@ pub fn normalize_stdout(s: &[u8]) -> Vec<u8> {
         let (first_visible, last_visible, grapheme_width, ref kind) =
             graphemes[visible_to_grapheme[visible_index]];
 
-        if let GraphemeKind::Tab = kind {
+        if matches!(kind, GraphemeKind::Tab) {
             if visible_index == first_visible {
                 let spaces = TAB_SIZE - (width % TAB_SIZE);
                 b.extend(std::iter::repeat_n(' ', spaces));
@@ -109,9 +109,8 @@ pub fn normalize_stdout(s: &[u8]) -> Vec<u8> {
             match kind {
                 GraphemeKind::LineBreak => width = 0,
                 GraphemeKind::Backspace => width = width.saturating_sub(1),
-                GraphemeKind::IgnoredControl => {}
+                GraphemeKind::IgnoredControl | GraphemeKind::Tab => {}
                 GraphemeKind::Text => width += grapheme_width,
-                GraphemeKind::Tab => {}
             }
         }
     }

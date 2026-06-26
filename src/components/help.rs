@@ -22,7 +22,7 @@ fn keys_str(
     mode: Mode,
     action: String,
 ) -> Vec<Span<'_>> {
-    keybindings.get(&(mode, action.clone())).map_or_else(
+    keybindings.get(&(mode, action)).map_or_else(
         || vec![Span::from("None")],
         |keys_list| {
             let mut spans = Vec::new();
@@ -84,7 +84,7 @@ impl Help {
 fn display_key(key: &KeyEvent) -> String {
     let mut s: String = String::new();
 
-    for m in key.modifiers.iter() {
+    for m in key.modifiers {
         match m {
             crossterm::event::KeyModifiers::CONTROL => s.push_str("Ctrl-"),
             crossterm::event::KeyModifiers::ALT => s.push_str("Alt-"),
@@ -110,7 +110,7 @@ fn display_key(key: &KeyEvent) -> String {
         KeyCode::PageDown => s.push_str("PageDown"),
         KeyCode::Delete => s.push_str("Delete"),
         KeyCode::Insert => s.push_str("Insert"),
-        KeyCode::F(i) => s.push_str(format!("F{:?}", i).as_str()),
+        KeyCode::F(i) => s.push_str(format!("F{i:?}").as_str()),
         KeyCode::Null => s.push_str("Null"),
         KeyCode::Esc => s.push_str("Esc"),
         KeyCode::CapsLock => s.push_str("CapsLock"),
@@ -120,9 +120,9 @@ fn display_key(key: &KeyEvent) -> String {
         KeyCode::Pause => s.push_str("Pause"),
         KeyCode::Menu => s.push_str("Menu"),
         KeyCode::KeypadBegin => s.push_str("KeypadBegin"),
-        KeyCode::Media(c) => s.push_str(format!("Media({:?})", c).as_str()),
-        KeyCode::Modifier(c) => s.push_str(format!("Modifier({:?})", c).as_str()),
-    };
+        KeyCode::Media(c) => s.push_str(format!("Media({c:?})").as_str()),
+        KeyCode::Modifier(c) => s.push_str(format!("Modifier({c:?})").as_str()),
+    }
 
     s
 }
@@ -299,7 +299,7 @@ impl Component for Help {
             Line::from(""),
         ];
 
-        for (action, mode, key) in basic_keys.into_iter() {
+        for (action, mode, key) in basic_keys {
             let keys_str = keys_str(&self.keybindings, mode, key);
             lines.push(Line::from(
                 [
@@ -321,7 +321,7 @@ impl Component for Help {
         ]));
         lines.push(Line::from(""));
 
-        for (description, mode, action) in pager_keys.into_iter() {
+        for (description, mode, action) in pager_keys {
             let keys_str = keys_str(&self.keybindings, mode, action);
             lines.push(Line::from(
                 [
@@ -346,7 +346,7 @@ impl Component for Help {
         ]));
         lines.push(Line::from(""));
 
-        for (action, mode, key) in timemachine_keys.into_iter() {
+        for (action, mode, key) in timemachine_keys {
             let keys_str = keys_str(&self.keybindings, mode, key);
             lines.push(Line::from(
                 [
@@ -377,16 +377,16 @@ impl Component for Help {
 
 fn get_action_keys(keybindings: KeyBindings) -> HashMap<(Mode, String), Vec<Vec<KeyEvent>>> {
     let mut action_keys: HashMap<(Mode, String), Vec<Vec<KeyEvent>>> = HashMap::new();
-    keybindings.iter().for_each(|(mode, bindings)| {
-        bindings.iter().for_each(|(event, action)| {
+    for (mode, bindings) in keybindings.iter() {
+        for (event, action) in bindings {
             action_keys
                 .entry((*mode, action.to_string()))
                 .and_modify(|keys| {
                     keys.push(event.clone());
                 })
                 .or_insert_with(|| vec![event.clone()]);
-        });
-    });
+        }
+    }
     action_keys
 }
 

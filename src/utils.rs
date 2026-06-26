@@ -66,7 +66,7 @@ pub fn initialize_panic_handler() -> Result<()> {
                 .expect("human-panic: printing error message to console failed");
             eprintln!("{}", panic_hook.panic_report(panic_info)); // prints color-eyre stack trace to stderr
         }
-        let msg = format!("{}", panic_hook.panic_report(panic_info));
+        let msg = panic_hook.panic_report(panic_info).to_string();
         log::error!("Error: {}", strip_ansi_escapes::strip_str(msg));
 
         #[cfg(debug_assertions)]

@@ -48,7 +48,7 @@ impl Home {
             interval_component: Interval::new(config.clone(), runtime_config.clone()),
             clock_component: Clock::new(config.clone()),
             execution_result_component: ExecutionResult::new(config.clone(), is_fold),
-            history_component: History::new(config.clone(), runtime_config.clone()),
+            history_component: History::new(config.clone(), runtime_config),
             prompt_component: Prompt::new(),
             status_component: Status::new(config.clone(), is_fold, diff_mode, is_bell, read_only),
             help_component: Help::new(config),
@@ -111,7 +111,7 @@ impl Component for Home {
         self.history_component.register_action_handler(tx.clone());
         self.prompt_component.register_action_handler(tx.clone());
         self.status_component.register_action_handler(tx.clone());
-        self.help_component.register_action_handler(tx.clone());
+        self.help_component.register_action_handler(tx);
     }
 
     fn update(&mut self, action: Action, area: Rect) {
@@ -159,7 +159,7 @@ impl Component for Home {
         self.history_component.update(action.clone(), history);
         self.prompt_component.update(action.clone(), prompt);
         self.status_component.update(action.clone(), status);
-        self.help_component.update(action.clone(), help);
+        self.help_component.update(action, help);
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {

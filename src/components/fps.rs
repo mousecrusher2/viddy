@@ -60,12 +60,11 @@ impl FpsCounter {
 
 impl Component for FpsCounter {
     fn update(&mut self, action: Action, _area: Rect) {
-        if let Action::Tick = action {
-            self.app_tick()
-        };
-        if let Action::Render = action {
-            self.render_tick()
-        };
+        match action {
+            Action::Tick => self.app_tick(),
+            Action::Render => self.render_tick(),
+            _ => {}
+        }
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, rect: Rect) -> Result<()> {
