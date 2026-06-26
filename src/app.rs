@@ -225,7 +225,7 @@ impl<S: Store> App<S> {
                     tui::Event::Render => action_tx.send(Action::Render)?,
                     tui::Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
                     tui::Event::Key(key) => {
-                        if let Some(keymap) = self.config.keybindings.get(&self.mode) {
+                        if let Some(keymap) = self.config.keybindings.0.get(&self.mode) {
                             if let Some(action) = keymap.get(&vec![key]) {
                                 log::info!("Got action: {action:?}");
                                 action_tx.send(action.clone())?;
@@ -353,7 +353,7 @@ impl<S: Store> App<S> {
                                     .convert(&normalize_stdout(&record.stderr));
                                 result.mark_text(
                                     0,
-                                    result.len(),
+                                    result.chars.len(),
                                     Style::new()
                                         .fg_color(Some(Color::Ansi(anstyle::AnsiColor::Red))),
                                 );

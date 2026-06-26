@@ -2,11 +2,10 @@ use std::{io::Read, iter};
 
 use anstyle::{AnsiColor, Color, Effects, RgbColor, Style};
 use anstyle_parse::{DefaultCharAccumulator, ParamsIter, Parser, Perform};
-use derive_deref::{Deref, DerefMut};
 use ratatui::buffer::CellWidth;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deref, DerefMut, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct Text {
     #[serde(skip)]
     pub chars: Vec<Char>,
@@ -389,9 +388,9 @@ mod tests {
     }
 
     #[test]
-    fn test_text_accessed_by_index() {
+    fn test_text_chars_accessed_by_index() {
         let text = Text::new("Hello, world!");
-        assert_eq!(text[3].to_string(), "l");
+        assert_eq!(text.chars[3].to_string(), "l");
     }
 
     #[test]

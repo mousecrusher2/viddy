@@ -3,7 +3,6 @@ use std::{collections::HashMap, path::PathBuf};
 use chrono::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use derive_deref::{Deref, DerefMut};
 use ratatui::style::{Color, Modifier, Style};
 use serde::{Deserialize, de::Deserializer};
 
@@ -114,6 +113,7 @@ impl Config {
 
         let current_binding_actions = self
             .keybindings
+            .0
             .iter()
             .flat_map(|(mode, bindings)| {
                 bindings
@@ -124,7 +124,7 @@ impl Config {
             .collect::<Vec<_>>();
 
         for (mode, default_bindings) in &default_config.keybindings.0 {
-            let user_bindings = self.keybindings.entry(*mode).or_default();
+            let user_bindings = self.keybindings.0.entry(*mode).or_default();
             for (key, cmd) in default_bindings {
                 if current_binding_actions
                     .iter()
@@ -140,7 +140,7 @@ impl Config {
         }
 
         for (mode, default_styles) in &default_config.styles.0 {
-            let user_styles = self.styles.entry(*mode).or_default();
+            let user_styles = self.styles.0.entry(*mode).or_default();
             for (style_key, style) in default_styles {
                 user_styles
                     .entry(style_key.clone())
@@ -174,6 +174,7 @@ impl Config {
     pub fn get_style(&self, style: &str) -> Style {
         *self
             .styles
+            .0
             .get(&Mode::All)
             .and_then(|styles| styles.get(style))
             .unwrap_or(&Style::default())
@@ -242,7 +243,7 @@ impl From<OldConfig> for Config {
     }
 }
 
-#[derive(Clone, Debug, Default, Deref, DerefMut)]
+#[derive(Clone, Debug, Default)]
 pub struct KeyBindings(pub HashMap<Mode, HashMap<Vec<KeyEvent>, Action>>);
 
 impl<'de> Deserialize<'de> for KeyBindings {
@@ -434,7 +435,7 @@ pub fn parse_key_sequence(raw: &str) -> Result<Vec<KeyEvent>, String> {
         .collect()
 }
 
-#[derive(Clone, Debug, Default, Deref, DerefMut)]
+#[derive(Clone, Debug, Default)]
 pub struct Styles(pub HashMap<Mode, HashMap<String, Style>>);
 
 impl<'de> Deserialize<'de> for Styles {
@@ -620,6 +621,7 @@ mod tests {
         let c = Config::load()?;
         assert_eq!(
             c.keybindings
+                .0
                 .get(&Mode::All)
                 .unwrap()
                 .get(&parse_key_sequence("<q>").unwrap_or_default())
@@ -756,6 +758,7 @@ scroll_top_of_page = "g g"
             assert_eq!(
                 config
                     .keybindings
+                    .0
                     .get(&Mode::All)
                     .unwrap()
                     .get(&parse_key_sequence(key).unwrap_or_default())

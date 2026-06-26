@@ -71,8 +71,8 @@ mod tests {
 
         super::diff_and_mark(current, previous, &mut text);
 
-        assert_eq!(text[10].style, Style::new());
-        assert_eq!(text[11].style, style);
+        assert_eq!(text.chars[10].style, Style::new());
+        assert_eq!(text.chars[11].style, style);
     }
 
     #[test]
@@ -86,13 +86,13 @@ mod tests {
 
         super::diff_and_mark(current, previous, &mut text);
 
-        assert_eq!(text[11].style, Style::new());
+        assert_eq!(text.chars[11].style, Style::new());
         for i in 12..=14 {
-            assert_eq!(text[i].style, style);
+            assert_eq!(text.chars[i].style, style);
         }
-        assert_eq!(text[15].style, Style::new());
+        assert_eq!(text.chars[15].style, Style::new());
         for i in 16..=20 {
-            assert_eq!(text[i].style, style);
+            assert_eq!(text.chars[i].style, style);
         }
     }
 }

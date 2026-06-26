@@ -374,7 +374,7 @@ impl Component for Help {
 
 fn get_action_keys(keybindings: KeyBindings) -> HashMap<(Mode, String), Vec<Vec<KeyEvent>>> {
     let mut action_keys: HashMap<(Mode, String), Vec<Vec<KeyEvent>>> = HashMap::new();
-    for (mode, bindings) in keybindings.iter() {
+    for (mode, bindings) in keybindings.0.iter() {
         for (event, action) in bindings {
             action_keys
                 .entry((*mode, action.to_string()))
