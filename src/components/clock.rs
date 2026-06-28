@@ -1,6 +1,9 @@
 use chrono::{DateTime, Local};
 use color_eyre::eyre::Result;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
 
 use super::{Component, Frame};
 use crate::{action::Action, config::Config};
@@ -11,6 +14,7 @@ pub struct Clock {
 }
 
 impl Clock {
+    #[must_use]
     pub fn new(config: Config) -> Self {
         Self { config, time: None }
     }

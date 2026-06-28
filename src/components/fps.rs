@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use color_eyre::eyre::Result;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::Block};
 
 use super::Component;
 use crate::{action::Action, tui::Frame};
@@ -24,6 +24,7 @@ impl Default for FpsCounter {
 }
 
 impl FpsCounter {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             app_start_time: Instant::now(),
@@ -40,7 +41,7 @@ impl FpsCounter {
         let now = Instant::now();
         let elapsed = (now - self.app_start_time).as_secs_f64();
         if elapsed >= 1.0 {
-            self.app_fps = self.app_frames as f64 / elapsed;
+            self.app_fps = f64::from(self.app_frames) / elapsed;
             self.app_start_time = now;
             self.app_frames = 0;
         }
@@ -51,7 +52,7 @@ impl FpsCounter {
         let now = Instant::now();
         let elapsed = (now - self.render_start_time).as_secs_f64();
         if elapsed >= 1.0 {
-            self.render_fps = self.render_frames as f64 / elapsed;
+            self.render_fps = f64::from(self.render_frames) / elapsed;
             self.render_start_time = now;
             self.render_frames = 0;
         }

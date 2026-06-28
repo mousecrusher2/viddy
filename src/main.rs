@@ -90,7 +90,7 @@ fn main() -> Result<()> {
         .unwrap()
         .block_on(async {
             tokio_main().await.inspect_err(|_| {
-                eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME"))
+                eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME"));
             })
         })
 }

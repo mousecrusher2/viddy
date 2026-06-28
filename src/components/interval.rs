@@ -1,6 +1,9 @@
 use chrono::Duration as ChronoDuration;
 use color_eyre::eyre::Result;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
 
 use super::{Component, Frame};
 use crate::config::{Config, RuntimeConfig};
@@ -11,6 +14,7 @@ pub struct Interval {
 }
 
 impl Interval {
+    #[must_use]
     pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
         Self {
             config,

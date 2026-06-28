@@ -201,37 +201,37 @@ impl Perform for Converter {
             Some([21]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::BOLD))
+                    .effects(self.style.get_effects().remove(Effects::BOLD));
             }
             Some([22]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::DIMMED))
+                    .effects(self.style.get_effects().remove(Effects::DIMMED));
             }
             Some([23]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::ITALIC))
+                    .effects(self.style.get_effects().remove(Effects::ITALIC));
             }
             Some([24]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::UNDERLINE))
+                    .effects(self.style.get_effects().remove(Effects::UNDERLINE));
             }
             Some([25]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::BLINK))
+                    .effects(self.style.get_effects().remove(Effects::BLINK));
             }
             Some([28]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::HIDDEN))
+                    .effects(self.style.get_effects().remove(Effects::HIDDEN));
             }
             Some([29]) => {
                 self.style = self
                     .style
-                    .effects(self.style.get_effects().remove(Effects::STRIKETHROUGH))
+                    .effects(self.style.get_effects().remove(Effects::STRIKETHROUGH));
             }
             Some([39]) => self.style = self.style.fg_color(None),
             Some([49]) => self.style = self.style.bg_color(None),

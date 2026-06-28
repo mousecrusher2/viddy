@@ -94,7 +94,7 @@ impl Config {
                     .required(false),
             );
             if config_dir.join(file).exists() {
-                found_config = true
+                found_config = true;
             }
         }
         if !found_config {
@@ -171,6 +171,7 @@ impl Config {
         }
     }
 
+    #[must_use]
     pub fn get_style(&self, style: &str) -> Style {
         *self
             .styles
@@ -192,10 +193,9 @@ impl From<OldConfig> for Config {
 
         let wrap = |s: &str| {
             s.trim()
-                .split(" ")
+                .split(' ')
                 .map(|s| format!("<{s}>"))
-                .collect::<Vec<_>>()
-                .join("")
+                .collect::<String>()
         };
         let mut all_keybindings = HashMap::new();
         let mut insert_keybinding = |key: Option<String>, action: Action| {
@@ -348,6 +348,7 @@ fn parse_key_code_with_modifiers(
     Ok(KeyEvent::new(c, modifiers))
 }
 
+#[must_use]
 pub fn key_event_to_string(key_event: &KeyEvent) -> String {
     let char;
     let key_code = match key_event.code {
@@ -415,11 +416,11 @@ pub fn parse_key_sequence(raw: &str) -> Result<Vec<KeyEvent>, String> {
     if raw.chars().filter(|c| *c == '>').count() != raw.chars().filter(|c| *c == '<').count() {
         return Err(format!("Unable to parse `{raw}`"));
     }
-    let raw = if !raw.contains("><") {
+    let raw = if raw.contains("><") {
+        raw
+    } else {
         let raw = raw.strip_prefix('<').unwrap_or(raw);
         raw.strip_prefix('>').unwrap_or(raw)
-    } else {
-        raw
     };
     raw.split("><")
         .map(|seq| {
@@ -460,6 +461,7 @@ impl<'de> Deserialize<'de> for Styles {
     }
 }
 
+#[must_use]
 pub fn parse_style(line: &str) -> Style {
     let (foreground, background) =
         line.split_at(line.to_lowercase().find("on ").unwrap_or(line.len()));

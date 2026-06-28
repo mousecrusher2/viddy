@@ -1,6 +1,6 @@
 use color_eyre::eyre::Result;
 use crossterm::event::KeyEvent;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::Paragraph};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
@@ -16,6 +16,7 @@ pub struct Prompt {
 }
 
 impl Prompt {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

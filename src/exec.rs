@@ -5,7 +5,7 @@ pub async fn exec(
     command: Vec<String>,
     shell: Option<(String, Vec<String>)>,
 ) -> Result<(Vec<u8>, Vec<u8>, i32)> {
-    let (command, args) = prepare_command(command, shell);
+    let (command, args) = prepare_command(&command, shell);
     let mut command = Command::new(command);
 
     let (width, height) = crossterm::terminal::size()?;
@@ -22,10 +22,10 @@ pub async fn exec(
 }
 
 fn prepare_command(
-    command: Vec<String>,
+    command: &[String],
     shell: Option<(String, Vec<String>)>,
 ) -> (String, Vec<String>) {
-    if cfg!(target_os = "windows") && !is_pwsh(&shell) {
+    if cfg!(target_os = "windows") && !is_pwsh(shell.as_ref()) {
         let cmd_str = command.join(" ");
         return ("cmd".to_string(), vec!["/C".to_string(), cmd_str]);
     }
@@ -39,7 +39,7 @@ fn prepare_command(
     }
 }
 
-fn is_pwsh(shell: &Option<(String, Vec<String>)>) -> bool {
+fn is_pwsh(shell: Option<&(String, Vec<String>)>) -> bool {
     if let Some((shell, _)) = shell {
         shell == "pwsh"
     } else {

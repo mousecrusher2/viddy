@@ -84,6 +84,7 @@ pub fn initialize_panic_handler() -> Result<()> {
     Ok(())
 }
 
+#[must_use]
 pub fn get_data_dir() -> PathBuf {
     if let Some(s) = &*DATA_FOLDER {
         s.clone()
@@ -94,6 +95,7 @@ pub fn get_data_dir() -> PathBuf {
     }
 }
 
+#[must_use]
 pub fn get_config_dir() -> PathBuf {
     if let Some(s) = &*CONFIG_FOLDER {
         s.clone()
@@ -104,6 +106,7 @@ pub fn get_config_dir() -> PathBuf {
     }
 }
 
+#[must_use]
 pub fn get_old_config_dir() -> PathBuf {
     if let Some(base_dirs) = BaseDirs::new() {
         base_dirs.config_dir().to_path_buf()
@@ -126,7 +129,7 @@ pub unsafe fn initialize_logging() -> Result<()> {
             std::env::var("RUST_LOG")
                 .or_else(|_| std::env::var(LOG_ENV.clone()))
                 .unwrap_or_else(|_| format!("{}=info", env!("CARGO_CRATE_NAME"))),
-        )
+        );
     };
     let file_subscriber = tracing_subscriber::fmt::layer()
         .with_file(true)
@@ -168,6 +171,7 @@ macro_rules! trace_dbg {
     };
 }
 
+#[must_use]
 pub fn version() -> String {
     let author = clap::crate_authors!();
 

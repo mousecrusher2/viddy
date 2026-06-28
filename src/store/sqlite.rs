@@ -81,8 +81,8 @@ impl Store for SQLiteStore {
                     record.stderr,
                     record.end_time.to_utc().to_rfc3339(),
                     record.exit_code,
-                    record.diff.map(|(add, _delete)| add as i64),
-                    record.diff.map(|(_add, delete)| delete as i64),
+                    record.diff.map(|(add, _delete)| i64::from(add)),
+                    record.diff.map(|(_add, delete)| i64::from(delete)),
                     record.previous_id,
                 ),
             )?;

@@ -1,5 +1,5 @@
 use color_eyre::eyre::Result;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::Paragraph};
 
 use super::{Component, Frame};
 use crate::{
@@ -18,6 +18,7 @@ pub struct Status {
 }
 
 impl Status {
+    #[must_use]
     pub fn new(
         config: Config,
         is_fold: bool,
@@ -70,7 +71,12 @@ impl Component for Status {
             status.push(Span::styled(" [D]iff±", disabled_style));
         }
 
-        if !self.read_only {
+        if self.read_only {
+            status.push(Span::styled(
+                " Read-only",
+                self.config.get_style("readonly"),
+            ));
+        } else {
             status.push(Span::styled(
                 " [S]uspend",
                 if self.is_suspend {
@@ -86,11 +92,6 @@ impl Component for Status {
                 } else {
                     disabled_style
                 },
-            ));
-        } else {
-            status.push(Span::styled(
-                " Read-only",
-                self.config.get_style("readonly"),
             ));
         }
 

@@ -53,3 +53,8 @@ vergen-gix = { version = "10.0.1", features = ["build", "cargo"] }
 [dev-dependencies]
 ansi-parser = "0.9.1"
 pretty_assertions = "1.4.1"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"

@@ -1,7 +1,11 @@
 use ansi_to_tui::IntoText;
 use color_eyre::eyre::Result;
 use crossterm::event::{MouseEvent, MouseEventKind};
-use ratatui::{buffer::CellWidth as _, prelude::*, widgets::*};
+use ratatui::{
+    buffer::CellWidth as _,
+    prelude::*,
+    widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+};
 use symbols::scrollbar;
 use unicode_segmentation::UnicodeSegmentation as _;
 
@@ -23,6 +27,7 @@ pub struct ExecutionResult {
 }
 
 impl ExecutionResult {
+    #[must_use]
     pub fn new(config: Config, fold: bool) -> Self {
         Self {
             config,
@@ -318,7 +323,7 @@ use color_eyre::eyre::Result;
 
         let result = fold_text(&text, 97);
 
-        assert_eq!(result.to_string(), str)
+        assert_eq!(result.to_string(), str);
     }
 
     #[test]
@@ -330,7 +335,7 @@ use color_eyre::eyre::Result;
         assert_eq!(
             result.to_string(),
             "あいうえお\nかきくけこ\nさしすせそ\nたちつてと\nなにぬねの"
-        )
+        );
     }
 
     #[test]
@@ -342,7 +347,7 @@ use color_eyre::eyre::Result;
         assert_eq!(
             result.to_string(),
             "iあいうえ\nおかきくけ\nこさしすせ\nそたちつて\nとなにぬね\nの"
-        )
+        );
     }
 
     #[test]

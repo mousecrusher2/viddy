@@ -63,16 +63,19 @@ impl Tui {
         })
     }
 
+    #[must_use]
     pub fn tick_rate(mut self, tick_rate: f64) -> Self {
         self.tick_rate = tick_rate;
         self
     }
 
+    #[must_use]
     pub fn frame_rate(mut self, frame_rate: f64) -> Self {
         self.frame_rate = frame_rate;
         self
     }
 
+    #[must_use]
     pub fn mouse(mut self, mouse: bool) -> Self {
         self.mouse = mouse;
         self
@@ -94,7 +97,7 @@ impl Tui {
                 let render_delay = render_interval.tick();
                 let crossterm_event = reader.next().fuse();
                 tokio::select! {
-                    _ = cancellation_token.cancelled() => {
+                    () = cancellation_token.cancelled() => {
                         break;
                     }
                     maybe_event = crossterm_event => {

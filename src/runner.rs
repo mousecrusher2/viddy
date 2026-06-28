@@ -79,7 +79,7 @@ pub async fn run_executor<S: Store>(
         }
 
         let interval = store.get_runtime_config()?.map_or(
-            runtime_config.interval.num_milliseconds() as u64,
+            runtime_config.interval.num_milliseconds().cast_unsigned(),
             |config| config.interval,
         );
 
@@ -156,7 +156,7 @@ pub async fn run_executor_precise<S: Store>(
         let elapased = chrono::Local::now().signed_duration_since(start_time);
 
         let interval = store.get_runtime_config()?.map_or(
-            runtime_config.interval.num_milliseconds() as u64,
+            runtime_config.interval.num_milliseconds().cast_unsigned(),
             |config| config.interval,
         );
 
@@ -165,7 +165,7 @@ pub async fn run_executor_precise<S: Store>(
         if let Ok(elapsed_std) = elapased.to_std()
             && elapsed_std < interval
         {
-            let sleep_time = interval - elapsed_std;
+            let sleep_time = interval.checked_sub(elapsed_std).unwrap();
             tokio::time::sleep(sleep_time).await;
         }
     }
@@ -177,7 +177,7 @@ fn count_diff(old: &str, current: &str) -> (u32, u32) {
         .map(|c| match c {
             Chunk::Delete(s) => (0, s.chars().count() as u32),
             Chunk::Insert(s) => (s.chars().count() as u32, 0),
-            _ => (0, 0),
+            Chunk::Equal(_) => (0, 0),
         })
         .reduce(|t1, t2| (t1.0 + t2.0, t1.1 + t2.1))
         .unwrap_or_default()
@@ -194,7 +194,7 @@ mod tests {
 
         let result = count_diff(old, current);
 
-        assert_eq!(result, (1, 0))
+        assert_eq!(result, (1, 0));
     }
 
     #[test]
@@ -204,6 +204,6 @@ mod tests {
 
         let result = count_diff(old, current);
 
-        assert_eq!(result, (1, 2))
+        assert_eq!(result, (1, 2));
     }
 }

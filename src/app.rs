@@ -55,11 +55,11 @@ impl<S: Store> App<S> {
             let store_runtime_config = store.get_runtime_config()?.unwrap_or_default();
 
             RuntimeConfig {
-                interval: Duration::milliseconds(store_runtime_config.interval as i64),
+                interval: Duration::milliseconds(store_runtime_config.interval.cast_signed()),
                 command: store_runtime_config
                     .command
                     .split(' ')
-                    .map(|s| s.to_string())
+                    .map(ToOwned::to_owned)
                     .collect(),
             }
         } else {
@@ -99,7 +99,7 @@ impl<S: Store> App<S> {
             .unwrap_or_else(|| "sh".to_string());
         let default_shell_options = match config.general.shell_options {
             Some(ref shell_options) if !shell_options.is_empty() => {
-                shell_options.split(' ').map(|s| s.to_string()).collect()
+                shell_options.split(' ').map(ToOwned::to_owned).collect()
             }
             _ => Vec::new(),
         };
@@ -115,7 +115,7 @@ impl<S: Store> App<S> {
 
         let timemachine_mode = false;
         let home = Home::new(
-            config.clone(),
+            &config,
             runtime_config.clone(),
             !cli.is_unfold,
             diff_mode,
@@ -267,7 +267,11 @@ impl<S: Store> App<S> {
                             Duration::milliseconds(self.config.general.interval_step_ms);
 
                         self.store.set_runtime_config(StoreRuntimeConfig {
-                            interval: self.runtime_config.interval.num_milliseconds() as u64,
+                            interval: self
+                                .runtime_config
+                                .interval
+                                .num_milliseconds()
+                                .cast_unsigned(),
                             command: self.runtime_config.command.join(" "),
                         })?;
                     }
@@ -281,7 +285,7 @@ impl<S: Store> App<S> {
                         self.runtime_config.interval = new_interval;
 
                         self.store.set_runtime_config(StoreRuntimeConfig {
-                            interval: new_interval.num_milliseconds() as u64,
+                            interval: new_interval.num_milliseconds().cast_unsigned(),
                             command: self.runtime_config.command.join(" "),
                         })?;
                     }
@@ -427,14 +431,14 @@ impl<S: Store> App<S> {
                         None => action_tx.send(Action::SetDiff(Some(DiffMode::Add)))?,
                         Some(DiffMode::Add) => action_tx.send(Action::SetDiff(None))?,
                         Some(DiffMode::Delete) => {
-                            action_tx.send(Action::SetDiff(Some(DiffMode::Add)))?
+                            action_tx.send(Action::SetDiff(Some(DiffMode::Add)))?;
                         }
                     },
                     Action::SwitchDeletionDiff => match self.diff_mode {
                         None => action_tx.send(Action::SetDiff(Some(DiffMode::Delete)))?,
                         Some(DiffMode::Delete) => action_tx.send(Action::SetDiff(None))?,
                         Some(DiffMode::Add) => {
-                            action_tx.send(Action::SetDiff(Some(DiffMode::Delete)))?
+                            action_tx.send(Action::SetDiff(Some(DiffMode::Delete)))?;
                         }
                     },
                     Action::SetDiff(diff_mode) => {
@@ -479,7 +483,7 @@ impl<S: Store> App<S> {
                 let size = tui.size()?;
                 let area = Rect::new(0, 0, size.width, size.height);
                 for component in &mut self.components {
-                    component.update(&action, area)
+                    component.update(&action, area);
                 }
             }
 

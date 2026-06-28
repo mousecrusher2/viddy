@@ -7,7 +7,10 @@ use std::{
 use chrono::{DateTime, Local};
 use color_eyre::eyre::{Ok, Result};
 use crossterm::event::{MouseEvent, MouseEventKind};
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders},
+};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_widget_list::{ListBuilder, ListState, ListView};
 
@@ -31,6 +34,7 @@ pub struct History {
 }
 
 impl History {
+    #[must_use]
     pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
         let state = ListState::default();
         let index = HashMap::new();
@@ -92,7 +96,7 @@ impl History {
             (!item.is_running).then_some(i)
         });
 
-        self.select(index_to_select)
+        self.select(index_to_select);
     }
 
     fn select(&mut self, index: Option<usize>) {
@@ -116,19 +120,19 @@ impl History {
     }
 
     fn go_to_past(&mut self) {
-        self.select_saturating_add(1)
+        self.select_saturating_add(1);
     }
 
     fn go_to_more_past(&mut self) {
-        self.select_saturating_add(10)
+        self.select_saturating_add(10);
     }
 
     fn go_to_future(&mut self) {
-        self.select_saturating_sub(1)
+        self.select_saturating_sub(1);
     }
 
     fn go_to_more_future(&mut self) {
-        self.select_saturating_sub(10)
+        self.select_saturating_sub(10);
     }
 
     fn select_saturating_add(&mut self, n: usize) {
@@ -144,7 +148,7 @@ impl History {
             return;
         }
 
-        self.select(selected)
+        self.select(selected);
     }
 
     fn select_saturating_sub(&mut self, n: usize) {
@@ -156,7 +160,7 @@ impl History {
             return;
         }
 
-        self.select(self.state.selected.map(|s| s.saturating_sub(n)))
+        self.select(self.state.selected.map(|s| s.saturating_sub(n)));
     }
 
     fn go_to_oldest(&mut self) {
@@ -164,7 +168,7 @@ impl History {
             return;
         }
 
-        self.select(self.items.len().checked_sub(1))
+        self.select(self.items.len().checked_sub(1));
     }
 
     fn go_to_current(&mut self) {
@@ -172,7 +176,7 @@ impl History {
             return;
         }
 
-        self.select_latest()
+        self.select_latest();
     }
 
     fn handle_mouse_events(&mut self, event: MouseEvent, area: Rect) {
@@ -201,13 +205,13 @@ impl Component for History {
         match *action {
             Action::InsertHistory(id, start_time) => self.insert_history(id, start_time),
             Action::UpdateHistoryResult(id, diff, exit_code) => {
-                self.update_history_result(id, diff, exit_code)
+                self.update_history_result(id, diff, exit_code);
             }
             Action::UpdateLatestHistoryCount => self.update_latest_history_count(),
             Action::GoToPast => self.go_to_past(),
             Action::GoToFuture => self.go_to_future(),
             Action::SetTimemachineMode(timemachine_mode) => {
-                self.set_timemachine_mode(timemachine_mode)
+                self.set_timemachine_mode(timemachine_mode);
             }
             Action::GoToMoreFuture => self.go_to_more_future(),
             Action::GoToMorePast => self.go_to_more_past(),

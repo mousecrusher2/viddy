@@ -18,12 +18,12 @@ const SHELL_HELP: &str = "Shell [default: cmd]";
 #[command(author, version = version(), about)]
 pub struct Cli {
     #[arg(
-    short = 'n',
-    long = "interval",
-    value_parser = validate_duration,
-    default_value = "2s",
-    help = "Seconds to wait between updates (>= 100ms)",
-  )]
+        short = 'n',
+        long = "interval",
+        value_parser = validate_duration,
+        default_value = "2s",
+        help = "Seconds to wait between updates (>= 100ms)",
+    )]
     pub interval: Duration,
 
     #[arg(
@@ -71,10 +71,10 @@ pub struct Cli {
     pub is_skip_empty_diffs: bool,
 
     #[arg(
-    long = "shell-options",
-    num_args(0..),
-    help = "Additional shell options"
-  )]
+        long = "shell-options",
+        num_args(0..),
+        help = "Additional shell options"
+    )]
     pub shell_options: Option<Vec<String>>,
 
     #[arg(
@@ -136,12 +136,11 @@ fn validate_duration(s: &str) -> Result<Duration> {
 }
 
 fn parse_duration_from_str(s: &str) -> Result<Duration> {
-    match humantime::parse_duration(s) {
-        Ok(d) => Ok(Duration::from_std(d)?),
-        Err(_) => {
-            // If the input is only a number, we assume it's in seconds
-            let n = s.parse::<f64>()?;
-            Ok(Duration::milliseconds((n * 1000.0) as i64))
-        }
+    if let Ok(d) = humantime::parse_duration(s) {
+        Ok(Duration::from_std(d)?)
+    } else {
+        // If the input is only a number, we assume it's in seconds
+        let n = s.parse::<f64>()?;
+        Ok(Duration::milliseconds((n * 1000.0) as i64))
     }
 }

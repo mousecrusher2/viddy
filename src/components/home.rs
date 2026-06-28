@@ -1,5 +1,5 @@
 use color_eyre::eyre::Result;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::Block};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{
@@ -30,8 +30,9 @@ pub struct Home {
 
 impl Home {
     #[allow(clippy::too_many_arguments)]
+    #[must_use]
     pub fn new(
-        config: Config,
+        config: &Config,
         runtime_config: RuntimeConfig,
         is_fold: bool,
         diff_mode: Option<DiffMode>,
@@ -43,7 +44,7 @@ impl Home {
         Self {
             config: config.clone(),
             is_no_title,
-            mode: Default::default(),
+            mode: Mode::default(),
             command_component: Command::new(config.clone(), runtime_config.clone()),
             interval_component: Interval::new(config.clone(), runtime_config.clone()),
             clock_component: Clock::new(config.clone()),
@@ -118,7 +119,7 @@ impl Component for Home {
         match *action {
             Action::SetMode(mode) => self.set_mode(mode),
             Action::SetTimemachineMode(timemachine_mode) => {
-                self.set_timemachine_mode(timemachine_mode)
+                self.set_timemachine_mode(timemachine_mode);
             }
             Action::IncreaseInterval => {
                 self.interval_component.increase_interval();
