@@ -58,3 +58,6 @@ pretty_assertions = "1.4.1"
 pedantic = { level = "warn", priority = -1 }
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
+too_many_lines = "allow"
+fn_params_excessive_bools = "allow"
+struct_excessive_bools = "allow"
