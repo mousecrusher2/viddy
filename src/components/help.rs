@@ -362,9 +362,10 @@ impl Component for Help {
 
         lines.push(Line::from(""));
 
-        self.y_position = self
-            .y_position
-            .min((lines.len().saturating_sub(area.height as usize)) as u16);
+        let area_height: usize = area.height.into();
+        let scrollable_height = lines.len().saturating_sub(area_height);
+        let max_y_position = u16::try_from(scrollable_height).unwrap_or(u16::MAX);
+        self.y_position = self.y_position.min(max_y_position);
 
         let paragraph = Paragraph::new(Text::from(lines)).scroll((self.y_position, 0));
         f.render_widget(paragraph, area);

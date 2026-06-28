@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, fmt::Write as _};
 
 use chrono::Duration;
 use color_eyre::eyre::Result;
@@ -19,14 +19,6 @@ pub struct RuntimeConfig {
 }
 
 const CONFIG: &str = include_str!("../.config/config.json5");
-
-#[derive(Clone, Debug, Deserialize, Default)]
-pub struct AppConfig {
-    #[serde(default)]
-    pub _data_dir: PathBuf,
-    #[serde(default)]
-    pub _config_dir: PathBuf,
-}
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct General {
@@ -61,8 +53,6 @@ impl From<OldGeneral> for General {
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Config {
-    #[serde(default, flatten)]
-    pub config: AppConfig,
     #[serde(default)]
     pub keybindings: KeyBindings,
     #[serde(default)]
@@ -73,11 +63,8 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Result<Self, config::ConfigError> {
-        let data_dir = crate::utils::get_data_dir();
         let config_dir = crate::utils::get_config_dir();
-        let mut builder = config::Config::builder()
-            .set_default("_data_dir", data_dir.to_str().unwrap())?
-            .set_default("_config_dir", config_dir.to_str().unwrap())?;
+        let mut builder = config::Config::builder();
 
         let config_files = [
             ("config.json5", config::FileFormat::Json5),
@@ -191,16 +178,14 @@ impl From<OldConfig> for Config {
         let keymap = old_config.keymap.unwrap_or_default();
         let color = old_config.color.unwrap_or_default();
 
-        let wrap = |s: &str| {
-            s.trim()
-                .split(' ')
-                .map(|s| format!("<{s}>"))
-                .collect::<String>()
-        };
         let mut all_keybindings = HashMap::new();
         let mut insert_keybinding = |key: Option<String>, action: Action| {
             if let Some(s) = key {
-                all_keybindings.insert(parse_key_sequence(&wrap(&s)).unwrap(), action);
+                let key_sequence = s.trim().split(' ').fold(String::new(), |mut acc, key| {
+                    write!(&mut acc, "<{key}>").unwrap();
+                    acc
+                });
+                all_keybindings.insert(parse_key_sequence(&key_sequence).unwrap(), action);
             }
         };
 
@@ -238,7 +223,6 @@ impl From<OldConfig> for Config {
             keybindings: KeyBindings(keybindings),
             styles: Styles(styles),
             general: General::from(general),
-            ..Default::default()
         }
     }
 }
@@ -523,9 +507,10 @@ fn parse_color(s: &str) -> Option<Color> {
                 .unwrap_or_default();
         Some(Color::Indexed(c))
     } else if s.contains("rgb") {
-        let red = (s.as_bytes()[3] as char).to_digit(10).unwrap_or_default() as u8;
-        let green = (s.as_bytes()[4] as char).to_digit(10).unwrap_or_default() as u8;
-        let blue = (s.as_bytes()[5] as char).to_digit(10).unwrap_or_default() as u8;
+        let bytes = s.as_bytes();
+        let red = rgb_digit(bytes[3]);
+        let green = rgb_digit(bytes[4]);
+        let blue = rgb_digit(bytes[5]);
         let c = 16 + red * 36 + green * 6 + blue;
         Some(Color::Indexed(c))
     } else if s == "bold black" {
@@ -562,6 +547,13 @@ fn parse_color(s: &str) -> Option<Color> {
         Some(Color::Indexed(7))
     } else {
         None
+    }
+}
+
+fn rgb_digit(byte: u8) -> u8 {
+    match byte {
+        b'0'..=b'9' => byte - b'0',
+        _ => 0,
     }
 }
 

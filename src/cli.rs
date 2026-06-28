@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration as StdDuration};
 
 use chrono::Duration;
 use clap::Parser;
@@ -141,6 +141,6 @@ fn parse_duration_from_str(s: &str) -> Result<Duration> {
     } else {
         // If the input is only a number, we assume it's in seconds
         let n = s.parse::<f64>()?;
-        Ok(Duration::milliseconds((n * 1000.0) as i64))
+        Ok(Duration::from_std(StdDuration::try_from_secs_f64(n)?)?)
     }
 }

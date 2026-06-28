@@ -71,7 +71,7 @@ impl<S: Store> App<S> {
             let interval = cli.interval.to_std().unwrap_or_default();
             let command = cli.command.join(" ");
             store.set_runtime_config(StoreRuntimeConfig {
-                interval: interval.as_millis() as u64,
+                interval: u64::try_from(interval.as_millis())?,
                 command,
             })?;
 

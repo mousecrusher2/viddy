@@ -25,6 +25,6 @@ impl ToSql for ExecutionId {
 
 impl FromSql for ExecutionId {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        value.as_i64().map(|v| Self(v as u32))
+        <u32 as FromSql>::column_result(value).map(Self)
     }
 }

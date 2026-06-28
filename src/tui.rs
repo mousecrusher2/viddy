@@ -18,9 +18,6 @@ use tokio::{
 use tokio_util::sync::CancellationToken;
 
 pub type IO = std::io::Stdout;
-pub fn io() -> IO {
-    std::io::stdout()
-}
 pub type Frame<'a> = ratatui::Frame<'a>;
 
 pub enum Event {
@@ -46,7 +43,7 @@ impl Tui {
     pub fn new() -> Result<Self> {
         let tick_rate = 4.0;
         let frame_rate = 60.0;
-        let terminal = ratatui::Terminal::new(Backend::new(io()))?;
+        let terminal = ratatui::Terminal::new(Backend::new(std::io::stdout()))?;
         let (event_tx, event_rx) = mpsc::unbounded_channel();
         let cancellation_token = CancellationToken::new();
         let task = tokio::spawn(async {});
@@ -162,9 +159,13 @@ impl Tui {
 
     pub fn enter(&mut self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
-        crossterm::execute!(io(), EnterAlternateScreen, cursor::Hide)?;
+        crossterm::execute!(
+            self.terminal.backend_mut(),
+            EnterAlternateScreen,
+            cursor::Hide
+        )?;
         if self.mouse {
-            crossterm::execute!(io(), EnableMouseCapture)?;
+            crossterm::execute!(self.terminal.backend_mut(), EnableMouseCapture)?;
         }
         self.start();
         Ok(())
@@ -174,9 +175,13 @@ impl Tui {
         self.stop()?;
         self.terminal.flush()?;
         if self.mouse {
-            crossterm::execute!(io(), DisableMouseCapture)?;
+            crossterm::execute!(self.terminal.backend_mut(), DisableMouseCapture)?;
         }
-        crossterm::execute!(io(), LeaveAlternateScreen, cursor::Show)?;
+        crossterm::execute!(
+            self.terminal.backend_mut(),
+            LeaveAlternateScreen,
+            cursor::Show
+        )?;
         if crossterm::terminal::is_raw_mode_enabled()? {
             crossterm::terminal::disable_raw_mode()?;
         }

@@ -78,10 +78,9 @@ impl Component for Prompt {
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
         if self.is_inputtig {
-            f.set_cursor_position(Position::new(
-                area.x + self.input.visual_cursor() as u16 + 1,
-                area.y,
-            ));
+            let cursor_offset =
+                u16::try_from(self.input.visual_cursor().saturating_add(1)).unwrap_or(u16::MAX);
+            f.set_cursor_position(Position::new(area.x.saturating_add(cursor_offset), area.y));
         }
 
         let input = if self.is_searching {

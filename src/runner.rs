@@ -174,13 +174,15 @@ pub async fn run_executor_precise<S: Store>(
 fn count_diff(old: &str, current: &str) -> (u32, u32) {
     diff(old, current)
         .iter()
-        .map(|c| match c {
-            Chunk::Delete(s) => (0, s.chars().count() as u32),
-            Chunk::Insert(s) => (s.chars().count() as u32, 0),
-            Chunk::Equal(_) => (0, 0),
+        .fold((0, 0), |(add, delete), c| match c {
+            Chunk::Delete(s) => (add, delete.saturating_add(count_chars(s))),
+            Chunk::Insert(s) => (add.saturating_add(count_chars(s)), delete),
+            Chunk::Equal(_) => (add, delete),
         })
-        .reduce(|t1, t2| (t1.0 + t2.0, t1.1 + t2.1))
-        .unwrap_or_default()
+}
+
+fn count_chars(s: &str) -> u32 {
+    u32::try_from(s.chars().count()).unwrap_or(u32::MAX)
 }
 
 #[cfg(test)]
