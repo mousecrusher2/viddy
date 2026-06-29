@@ -78,3 +78,18 @@ pub enum Action {
     IncreaseInterval,
     DecreaseInterval,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_uses_variant_name_without_fields() {
+        assert_eq!(
+            Action::SwitchTimemachineMode.to_string(),
+            "SwitchTimemachineMode"
+        );
+        assert_eq!(Action::SetFold(true).to_string(), "SetFold");
+        assert_eq!(Action::Error("message".to_string()).to_string(), "Error");
+    }
+}

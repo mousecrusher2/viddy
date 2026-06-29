@@ -23,7 +23,7 @@ const LOG_FILE: &str = concat!(env!("CARGO_PKG_NAME"), ".log");
 static PROJECT_DIRECTORY: LazyLock<Option<ProjectDirs>> =
     LazyLock::new(|| ProjectDirs::from("dev", "sachaos", env!("CARGO_PKG_NAME")));
 
-pub(crate) fn install_eyre_hook() -> Result<()> {
+pub fn install_eyre_hook() -> Result<()> {
     let (_, eyre_hook) = color_eyre::config::HookBuilder::default()
         .capture_span_trace_by_default(false)
         .display_location_section(false)
@@ -34,7 +34,7 @@ pub(crate) fn install_eyre_hook() -> Result<()> {
 }
 
 #[must_use]
-pub(crate) fn get_data_dir() -> PathBuf {
+pub fn get_data_dir() -> PathBuf {
     if let Some(s) = &*DATA_FOLDER {
         s.clone()
     } else if let Some(ref proj_dirs) = *PROJECT_DIRECTORY {
@@ -45,7 +45,7 @@ pub(crate) fn get_data_dir() -> PathBuf {
 }
 
 #[must_use]
-pub(crate) fn get_config_dir() -> PathBuf {
+pub fn get_config_dir() -> PathBuf {
     if let Some(s) = &*CONFIG_FOLDER {
         s.clone()
     } else if let Some(ref proj_dirs) = *PROJECT_DIRECTORY {
@@ -57,7 +57,7 @@ pub(crate) fn get_config_dir() -> PathBuf {
 
 /// # Safety
 /// This function is safe to call in a single-threaded program.
-pub(crate) unsafe fn initialize_logging() -> Result<()> {
+pub unsafe fn initialize_logging() -> Result<()> {
     let directory = get_data_dir();
     std::fs::create_dir_all(directory.clone())?;
     let log_path = directory.join(LOG_FILE);
@@ -86,7 +86,7 @@ pub(crate) unsafe fn initialize_logging() -> Result<()> {
 }
 
 #[must_use]
-pub(crate) fn get_old_config_dir() -> PathBuf {
+pub fn get_old_config_dir() -> PathBuf {
     if let Some(base_dirs) = BaseDirs::new() {
         base_dirs.config_dir().to_path_buf()
     } else {

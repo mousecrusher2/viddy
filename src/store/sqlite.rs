@@ -203,3 +203,86 @@ impl Store for SQLiteStore {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::TimeZone as _;
+
+    use super::*;
+    use crate::store::RuntimeConfig;
+
+    fn local_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        min: u32,
+        sec: u32,
+    ) -> DateTime<Local> {
+        Utc.with_ymd_and_hms(year, month, day, hour, min, sec)
+            .unwrap()
+            .with_timezone(&Local)
+    }
+
+    fn record() -> Record {
+        Record {
+            id: ExecutionId(1),
+            start_time: local_time(2026, 1, 2, 3, 4, 5),
+            stdout: b"stdout".to_vec(),
+            stderr: b"stderr".to_vec(),
+            end_time: local_time(2026, 1, 2, 3, 4, 6),
+            exit_code: 7,
+            diff: Some((8, 9)),
+            previous_id: Some(ExecutionId(0)),
+        }
+    }
+
+    #[test]
+    fn round_trips_record_and_runtime_config() -> Result<()> {
+        let temp_dir = tempfile::tempdir()?;
+        let mut store = SQLiteStore::new(temp_dir.path().join("history.db"), true)?;
+        let record = record();
+
+        store.add_record(record.clone())?;
+        store.set_runtime_config(RuntimeConfig {
+            interval: 1000,
+            command: "echo hello".to_string(),
+        })?;
+
+        let restored = store.get_record(record.id)?.unwrap();
+        assert_eq!(restored.id, record.id);
+        assert_eq!(restored.start_time, record.start_time);
+        assert_eq!(restored.stdout, record.stdout);
+        assert_eq!(restored.stderr, record.stderr);
+        assert_eq!(restored.end_time, record.end_time);
+        assert_eq!(restored.exit_code, record.exit_code);
+        assert_eq!(restored.diff, record.diff);
+        assert_eq!(restored.previous_id, record.previous_id);
+        assert_eq!(store.get_latest_id()?, Some(record.id));
+
+        let runtime_config = store.get_runtime_config()?.unwrap();
+        assert_eq!(runtime_config.interval, 1000);
+        assert_eq!(runtime_config.command, "echo hello");
+
+        Ok(())
+    }
+
+    #[test]
+    fn integer_timestamps_are_rejected() -> Result<()> {
+        let temp_dir = tempfile::tempdir()?;
+        let mut store = SQLiteStore::new(temp_dir.path().join("history.db"), true)?;
+
+        store.add_record(record())?;
+        {
+            let conn = store.conn.lock().unwrap();
+            conn.execute(
+                "UPDATE record SET start_time = 0, end_time = 0 WHERE id = ?1",
+                [ExecutionId(1)],
+            )?;
+        }
+
+        assert!(store.get_record(ExecutionId(1)).is_err());
+
+        Ok(())
+    }
+}
