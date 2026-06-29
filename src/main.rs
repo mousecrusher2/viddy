@@ -14,7 +14,7 @@ mod store;
 mod termtext;
 pub mod tui;
 mod types;
-pub mod utils;
+mod utils;
 mod widget;
 
 use clap::Parser;
@@ -23,11 +23,11 @@ use color_eyre::eyre::{Result, eyre};
 
 use crate::{
     app::App,
-    utils::{initialize_logging, initialize_panic_handler},
+    utils::{initialize_logging, install_eyre_hook},
 };
 
 async fn tokio_main() -> Result<()> {
-    initialize_panic_handler()?;
+    install_eyre_hook()?;
 
     let args = Cli::parse();
 

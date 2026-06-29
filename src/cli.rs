@@ -5,7 +5,34 @@ use clap::Parser;
 use color_eyre::eyre::{Result, bail};
 use serde_with::serde_as;
 
-use crate::utils::version;
+use crate::utils::{get_config_dir, get_data_dir};
+
+const VERSION_MESSAGE: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    "-",
+    env!("VERGEN_GIT_DESCRIBE"),
+    " (",
+    env!("VERGEN_BUILD_DATE"),
+    ")"
+);
+
+#[must_use]
+fn version() -> String {
+    let author = clap::crate_authors!();
+
+    let config_dir_path = get_config_dir().display().to_string();
+    let data_dir_path = get_data_dir().display().to_string();
+
+    format!(
+        "\
+{VERSION_MESSAGE}
+
+Authors: {author}
+
+Config directory: {config_dir_path}
+Data directory: {data_dir_path}"
+    )
+}
 
 #[cfg(not(target_os = "windows"))]
 const SHELL_HELP: &str = "Shell [default: sh]";
