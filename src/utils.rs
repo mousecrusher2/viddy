@@ -71,12 +71,7 @@ pub fn initialize_panic_handler() -> Result<()> {
 
         #[cfg(debug_assertions)]
         {
-            // Better Panic stacktrace that is only enabled when debugging.
-            better_panic::Settings::auto()
-                .most_recent_first(false)
-                .lineno_suffix(true)
-                .verbosity(better_panic::Verbosity::Full)
-                .create_panic_handler()(panic_info);
+            eprintln!("{}", panic_hook.panic_report(panic_info));
         }
 
         std::process::exit(libc::EXIT_FAILURE);

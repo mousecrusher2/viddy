@@ -14,7 +14,6 @@ build = "build.rs"
 ansi-to-tui = "8.0.1"
 anstyle = "1.0.10"
 anstyle-parse = { version = "0.2.6", features = ["utf8"] }
-better-panic = "0.3.0"
 chrono = "0.4.38"
 clap = { version = "4.5.21", features = ["derive", "cargo", "wrap_help", "unicode", "string"] }
 color-eyre = "0.6.3"
