@@ -35,38 +35,12 @@ pub static PROJECT_DIRECTORY: LazyLock<Option<ProjectDirs>> =
     LazyLock::new(|| ProjectDirs::from("dev", "sachaos", env!("CARGO_PKG_NAME")));
 
 pub fn initialize_panic_handler() -> Result<()> {
-    let (panic_hook, eyre_hook) = color_eyre::config::HookBuilder::default()
-        .panic_section(format!(
-            "This is a bug. Consider reporting it at {}",
-            env!("CARGO_PKG_REPOSITORY")
-        ))
+    let (_, eyre_hook) = color_eyre::config::HookBuilder::default()
         .capture_span_trace_by_default(false)
         .display_location_section(false)
         .display_env_section(false)
         .into_hooks();
     eyre_hook.install()?;
-    std::panic::set_hook(Box::new(move |panic_info| {
-        #[cfg(not(debug_assertions))]
-        {
-            use human_panic::{Metadata, handle_dump, print_msg};
-            let meta = Metadata::new(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
-                .authors(env!("CARGO_PKG_AUTHORS").replace(':', ", "))
-                .homepage(env!("CARGO_PKG_HOMEPAGE"));
-
-            let file_path = handle_dump(&meta, panic_info);
-            // prints human-panic message
-            print_msg(file_path, &meta)
-                .expect("human-panic: printing error message to console failed");
-            eprintln!("{}", panic_hook.panic_report(panic_info)); // prints color-eyre stack trace to stderr
-        }
-        let msg = panic_hook.panic_report(panic_info).to_string();
-        log::error!("Error: {}", strip_ansi_escapes::strip_str(msg));
-
-        #[cfg(debug_assertions)]
-        {
-            eprintln!("{}", panic_hook.panic_report(panic_info));
-        }
-    }));
     Ok(())
 }
 

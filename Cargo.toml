@@ -22,11 +22,9 @@ crossterm = { version = "0.29.0", features = ["serde", "event-stream", "libc"] }
 directories = "5.0.1"
 dissimilar = "1.0.9"
 futures = "0.3.31"
-human-panic = "2.0.2"
 humantime = "2.1.0"
 itertools = "0.14.0"
 json5 = "0.4.1"
-libc = "0.2.166"
 log = "0.4.22"
 ratatui = "0.30.1"
 rusqlite = { version = "0.32.1", features = ["bundled", "chrono"] }
@@ -34,7 +32,6 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 serde_with = { version = "3.11.0", features = ["chrono_0_4"] }
 signal-hook = "0.3.17"
-strip-ansi-escapes = "0.2.0"
 strum = { version = "0.26.3", features = ["derive"] }
 tempfile = "3.14.0"
 tokio = { version = "1.41.1", features = ["rt", "sync", "time", "process", "macros", "parking_lot"] }
