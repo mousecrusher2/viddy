@@ -2,7 +2,6 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use color_eyre::eyre::Result;
 use directories::{BaseDirs, ProjectDirs};
-use tracing::error;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{
     self, Layer, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
@@ -47,12 +46,6 @@ pub fn initialize_panic_handler() -> Result<()> {
         .into_hooks();
     eyre_hook.install()?;
     std::panic::set_hook(Box::new(move |panic_info| {
-        if let Ok(mut t) = crate::tui::Tui::new()
-            && let Err(r) = t.exit()
-        {
-            error!("Unable to exit Terminal: {:?}", r);
-        }
-
         #[cfg(not(debug_assertions))]
         {
             use human_panic::{Metadata, handle_dump, print_msg};
@@ -73,8 +66,6 @@ pub fn initialize_panic_handler() -> Result<()> {
         {
             eprintln!("{}", panic_hook.panic_report(panic_info));
         }
-
-        std::process::exit(libc::EXIT_FAILURE);
     }));
     Ok(())
 }

@@ -37,6 +37,7 @@ pub struct Tui {
     frame_rate: f64,
     tick_rate: f64,
     mouse: bool,
+    entered: bool,
 }
 
 impl Tui {
@@ -48,6 +49,7 @@ impl Tui {
         let cancellation_token = CancellationToken::new();
         let task = tokio::spawn(async {});
         let mouse = false;
+        let entered = false;
         Ok(Self {
             terminal,
             task,
@@ -57,6 +59,7 @@ impl Tui {
             frame_rate,
             tick_rate,
             mouse,
+            entered,
         })
     }
 
@@ -168,6 +171,7 @@ impl Tui {
             crossterm::execute!(self.terminal.backend_mut(), EnableMouseCapture)?;
         }
         self.start();
+        self.entered = true;
         Ok(())
     }
 
@@ -185,6 +189,7 @@ impl Tui {
         if crossterm::terminal::is_raw_mode_enabled()? {
             crossterm::terminal::disable_raw_mode()?;
         }
+        self.entered = false;
         Ok(())
     }
 
@@ -206,5 +211,15 @@ impl Tui {
 
     pub async fn next(&mut self) -> Option<Event> {
         self.event_rx.recv().await
+    }
+}
+
+impl Drop for Tui {
+    fn drop(&mut self) {
+        if self.entered
+            && let Err(e) = self.exit()
+        {
+            log::error!("Unable to exit Terminal: {e:?}");
+        }
     }
 }
