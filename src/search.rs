@@ -4,12 +4,13 @@ use crate::termtext::Text;
 
 pub fn search_and_mark(string: &str, text: &mut Text, query: &str, style: Style) {
     let mut byte_to_char_idx = vec![0; string.len() + 1];
-    let mut char_idx = 0;
-    for (i, _c) in string.char_indices() {
-        byte_to_char_idx[i] = char_idx;
-        char_idx += 1;
+    let byte_indices = string
+        .char_indices()
+        .map(|(byte_index, _)| byte_index)
+        .chain(std::iter::once(string.len()));
+    for (char_idx, byte_index) in byte_indices.enumerate() {
+        byte_to_char_idx[byte_index] = char_idx;
     }
-    byte_to_char_idx[string.len()] = char_idx; // for the last character
 
     for (byte_index, _) in string.match_indices(query) {
         let char_index = byte_to_char_idx[byte_index];

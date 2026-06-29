@@ -31,10 +31,8 @@ impl Text {
     }
 
     pub fn mark_text(&mut self, start: usize, end: usize, style: Style) {
-        for i in start..end {
-            if let Some(c) = self.chars.get_mut(i) {
-                c.style = style;
-            }
+        for c in &mut self.chars[start..end] {
+            c.style = style;
         }
     }
 

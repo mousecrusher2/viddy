@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Write as _};
 
 use color_eyre::eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{prelude::*, widgets::Paragraph};
 
 use super::{Component, Frame};
@@ -24,20 +24,19 @@ fn keys_str(
     keybindings.get(&(mode, action)).map_or_else(
         || vec![Span::from("None")],
         |keys_list| {
-            let mut spans = Vec::new();
-            for (i, keys) in keys_list.iter().enumerate() {
-                let mut s = String::new();
-                for key in keys {
-                    s.push('<');
-                    s.push_str(&display_key(key));
-                    s.push('>');
-                }
-                spans.push(Span::styled(s, Style::default().fg(Color::Yellow)));
-                if i < keys_list.len() - 1 {
-                    spans.push(Span::from(", "));
-                }
-            }
-            spans
+            itertools::Itertools::intersperse(
+                keys_list.iter().map(|keys| {
+                    let s = keys.iter().fold(String::new(), |mut s, key| {
+                        s.push('<');
+                        display_key(&mut s, key);
+                        s.push('>');
+                        s
+                    });
+                    Span::styled(s, Style::default().fg(Color::Yellow))
+                }),
+                Span::from(", "),
+            )
+            .collect()
         },
     )
 }
@@ -80,17 +79,13 @@ impl Help {
     }
 }
 
-fn display_key(key: &KeyEvent) -> String {
-    let mut s: String = String::new();
-
-    for m in key.modifiers {
-        match m {
-            crossterm::event::KeyModifiers::CONTROL => s.push_str("Ctrl-"),
-            crossterm::event::KeyModifiers::ALT => s.push_str("Alt-"),
-            crossterm::event::KeyModifiers::SHIFT => s.push_str("Shift-"),
-            _ => {}
-        }
-    }
+fn display_key(s: &mut String, key: &KeyEvent) {
+    s.extend(key.modifiers.iter().filter_map(|m| match m {
+        KeyModifiers::CONTROL => Some("Ctrl-"),
+        KeyModifiers::ALT => Some("Alt-"),
+        KeyModifiers::SHIFT => Some("Shift-"),
+        _ => None,
+    }));
 
     match key.code {
         KeyCode::Char(' ') => s.push_str("SPACE"),
@@ -109,7 +104,7 @@ fn display_key(key: &KeyEvent) -> String {
         KeyCode::PageDown => s.push_str("PageDown"),
         KeyCode::Delete => s.push_str("Delete"),
         KeyCode::Insert => s.push_str("Insert"),
-        KeyCode::F(i) => s.push_str(format!("F{i:?}").as_str()),
+        KeyCode::F(i) => write!(s, "F{i:?}").unwrap(),
         KeyCode::Null => s.push_str("Null"),
         KeyCode::Esc => s.push_str("Esc"),
         KeyCode::CapsLock => s.push_str("CapsLock"),
@@ -119,11 +114,9 @@ fn display_key(key: &KeyEvent) -> String {
         KeyCode::Pause => s.push_str("Pause"),
         KeyCode::Menu => s.push_str("Menu"),
         KeyCode::KeypadBegin => s.push_str("KeypadBegin"),
-        KeyCode::Media(c) => s.push_str(format!("Media({c:?})").as_str()),
-        KeyCode::Modifier(c) => s.push_str(format!("Modifier({c:?})").as_str()),
+        KeyCode::Media(c) => write!(s, "Media({c:?})").unwrap(),
+        KeyCode::Modifier(c) => write!(s, "Modifier({c:?})").unwrap(),
     }
-
-    s
 }
 
 impl Component for Help {
@@ -298,9 +291,9 @@ impl Component for Help {
             Line::from(""),
         ];
 
-        for (action, mode, key) in basic_keys {
+        lines.extend(basic_keys.map(|(action, mode, key)| {
             let keys_str = keys_str(&self.keybindings, mode, key);
-            lines.push(Line::from(
+            Line::from(
                 [
                     vec![
                         Span::from("   "),
@@ -310,8 +303,8 @@ impl Component for Help {
                     keys_str,
                 ]
                 .concat(),
-            ));
-        }
+            )
+        }));
 
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
@@ -320,9 +313,9 @@ impl Component for Help {
         ]));
         lines.push(Line::from(""));
 
-        for (description, mode, action) in pager_keys {
+        lines.extend(pager_keys.map(|(description, mode, action)| {
             let keys_str = keys_str(&self.keybindings, mode, action);
-            lines.push(Line::from(
+            Line::from(
                 [
                     vec![
                         Span::from("   "),
@@ -332,8 +325,8 @@ impl Component for Help {
                     keys_str,
                 ]
                 .concat(),
-            ));
-        }
+            )
+        }));
 
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
@@ -345,9 +338,9 @@ impl Component for Help {
         ]));
         lines.push(Line::from(""));
 
-        for (action, mode, key) in timemachine_keys {
+        lines.extend(timemachine_keys.map(|(action, mode, key)| {
             let keys_str = keys_str(&self.keybindings, mode, key);
-            lines.push(Line::from(
+            Line::from(
                 [
                     vec![
                         Span::from("   "),
@@ -357,8 +350,8 @@ impl Component for Help {
                     keys_str,
                 ]
                 .concat(),
-            ));
-        }
+            )
+        }));
 
         lines.push(Line::from(""));
 
@@ -375,18 +368,18 @@ impl Component for Help {
 }
 
 fn get_action_keys(keybindings: &KeyBindings) -> HashMap<(Mode, String), Vec<Vec<KeyEvent>>> {
-    let mut action_keys: HashMap<(Mode, String), Vec<Vec<KeyEvent>>> = HashMap::new();
-    for (mode, bindings) in &keybindings.0 {
-        for (event, action) in bindings {
+    keybindings
+        .0
+        .iter()
+        .flat_map(|(mode, bindings)| {
+            bindings
+                .iter()
+                .map(move |(event, action)| ((*mode, action.to_string()), event.clone()))
+        })
+        .fold(HashMap::new(), |mut action_keys, (key, event)| {
+            action_keys.entry(key).or_default().push(event);
             action_keys
-                .entry((*mode, action.to_string()))
-                .and_modify(|keys| {
-                    keys.push(event.clone());
-                })
-                .or_insert_with(|| vec![event.clone()]);
-        }
-    }
-    action_keys
+        })
 }
 
 #[cfg(test)]

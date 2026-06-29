@@ -4071,6 +4071,7 @@ dependencies = [
  "futures",
  "human-panic",
  "humantime",
+ "itertools",
  "json5",
  "libc",
  "log",
