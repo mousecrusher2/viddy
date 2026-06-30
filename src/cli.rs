@@ -2,7 +2,6 @@ use std::{path::PathBuf, time::Duration as StdDuration};
 
 use chrono::Duration;
 use color_eyre::eyre::{Result, bail};
-use serde_with::serde_as;
 
 use crate::utils::{get_config_dir, get_data_dir};
 
@@ -39,7 +38,6 @@ const SHELL_HELP: &str = "Shell [default: sh]";
 #[cfg(target_os = "windows")]
 const SHELL_HELP: &str = "Shell [default: cmd]";
 
-#[serde_as]
 #[derive(clap::Parser, Debug, Clone)]
 #[command(author, version = version(), about)]
 pub struct Cli {

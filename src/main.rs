@@ -26,7 +26,9 @@ use crate::{
     utils::{initialize_logging, install_eyre_hook},
 };
 
-async fn tokio_main() -> Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
+    initialize_logging()?;
     install_eyre_hook()?;
 
     let args = Cli::parse();
@@ -76,13 +78,4 @@ async fn tokio_main() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn main() -> Result<()> {
-    initialize_logging()?;
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(tokio_main())
 }
