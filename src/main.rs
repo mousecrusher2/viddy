@@ -81,16 +81,11 @@ async fn tokio_main() -> Result<()> {
 fn main() -> Result<()> {
     unsafe {
         // Safety: The caller must ensure this is called in a single-threaded program.
-        initialize_logging()
-            .inspect_err(|_| eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME")))?;
+        initialize_logging()?;
     }
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .unwrap()
-        .block_on(async {
-            tokio_main().await.inspect_err(|_| {
-                eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME"));
-            })
-        })
+        .block_on(tokio_main())
 }
