@@ -1,7 +1,6 @@
 use std::{path::PathBuf, time::Duration as StdDuration};
 
 use chrono::Duration;
-use clap::Parser;
 use color_eyre::eyre::{Result, bail};
 use serde_with::serde_as;
 
@@ -41,7 +40,7 @@ const SHELL_HELP: &str = "Shell [default: sh]";
 const SHELL_HELP: &str = "Shell [default: cmd]";
 
 #[serde_as]
-#[derive(Parser, Debug, Clone)]
+#[derive(clap::Parser, Debug, Clone)]
 #[command(author, version = version(), about)]
 pub struct Cli {
     #[arg(
