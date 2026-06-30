@@ -79,10 +79,7 @@ async fn tokio_main() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    unsafe {
-        // Safety: The caller must ensure this is called in a single-threaded program.
-        initialize_logging()?;
-    }
+    initialize_logging()?;
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
