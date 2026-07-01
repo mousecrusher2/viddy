@@ -1,4 +1,7 @@
-use std::{path::PathBuf, sync::LazyLock};
+use std::{
+    path::{Path, PathBuf},
+    sync::LazyLock,
+};
 
 use color_eyre::eyre::Result;
 use directories::{BaseDirs, ProjectDirs};
@@ -14,13 +17,34 @@ const DATA_ENV: &str = concat!(env!("PACKAGE_ENV_PREFIX"), "_DATA");
 const CONFIG_ENV: &str = concat!(env!("PACKAGE_ENV_PREFIX"), "_CONFIG");
 const LOG_ENV: &str = concat!(env!("PACKAGE_ENV_PREFIX"), "_LOGLEVEL");
 
-static DATA_FOLDER: LazyLock<Option<PathBuf>> =
-    LazyLock::new(|| std::env::var(DATA_ENV).ok().map(PathBuf::from));
-static CONFIG_FOLDER: LazyLock<Option<PathBuf>> =
-    LazyLock::new(|| std::env::var(CONFIG_ENV).ok().map(PathBuf::from));
 const LOG_FILE: &str = concat!(env!("CARGO_PKG_NAME"), ".log");
 static PROJECT_DIRECTORY: LazyLock<Option<ProjectDirs>> =
     LazyLock::new(|| ProjectDirs::from("dev", "sachaos", env!("CARGO_PKG_NAME")));
+static DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    if let Ok(path) = std::env::var(DATA_ENV) {
+        PathBuf::from(path)
+    } else if let Some(ref proj_dirs) = *PROJECT_DIRECTORY {
+        proj_dirs.data_local_dir().to_path_buf()
+    } else {
+        PathBuf::from(".").join(".data")
+    }
+});
+static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    if let Ok(path) = std::env::var(CONFIG_ENV) {
+        PathBuf::from(path)
+    } else if let Some(ref proj_dirs) = *PROJECT_DIRECTORY {
+        proj_dirs.config_local_dir().to_path_buf()
+    } else {
+        PathBuf::from(".").join(".config")
+    }
+});
+static OLD_CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    if let Some(base_dirs) = BaseDirs::new() {
+        base_dirs.config_dir().to_path_buf()
+    } else {
+        PathBuf::from(".").join(".config")
+    }
+});
 
 pub fn install_eyre_hook() -> Result<()> {
     let (_, eyre_hook) = color_eyre::config::HookBuilder::default()
@@ -33,25 +57,13 @@ pub fn install_eyre_hook() -> Result<()> {
 }
 
 #[must_use]
-pub fn get_data_dir() -> PathBuf {
-    if let Some(s) = &*DATA_FOLDER {
-        s.clone()
-    } else if let Some(ref proj_dirs) = *PROJECT_DIRECTORY {
-        proj_dirs.data_local_dir().to_path_buf()
-    } else {
-        PathBuf::from(".").join(".data")
-    }
+pub fn get_data_dir() -> &'static Path {
+    DATA_DIR.as_path()
 }
 
 #[must_use]
-pub fn get_config_dir() -> PathBuf {
-    if let Some(s) = &*CONFIG_FOLDER {
-        s.clone()
-    } else if let Some(ref proj_dirs) = *PROJECT_DIRECTORY {
-        proj_dirs.config_local_dir().to_path_buf()
-    } else {
-        PathBuf::from(".").join(".config")
-    }
+pub fn get_config_dir() -> &'static Path {
+    CONFIG_DIR.as_path()
 }
 
 fn logging_filter(env_var: impl Fn(&str) -> Option<String>) -> EnvFilter {
@@ -70,7 +82,7 @@ fn logging_filter(env_var: impl Fn(&str) -> Option<String>) -> EnvFilter {
 
 pub fn initialize_logging() -> Result<()> {
     let directory = get_data_dir();
-    std::fs::create_dir_all(directory.clone())?;
+    std::fs::create_dir_all(directory)?;
     let log_path = directory.join(LOG_FILE);
     let log_file = std::fs::File::create(log_path)?;
     let file_subscriber = tracing_subscriber::fmt::layer()
@@ -88,12 +100,8 @@ pub fn initialize_logging() -> Result<()> {
 }
 
 #[must_use]
-pub fn get_old_config_dir() -> PathBuf {
-    if let Some(base_dirs) = BaseDirs::new() {
-        base_dirs.config_dir().to_path_buf()
-    } else {
-        PathBuf::from(".").join(".config")
-    }
+pub fn get_old_config_dir() -> &'static Path {
+    OLD_CONFIG_DIR.as_path()
 }
 
 #[cfg(test)]
