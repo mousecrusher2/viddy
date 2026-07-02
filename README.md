@@ -20,6 +20,8 @@ Notable changes in this fork include:
 
 * Terminal text handling tweaks, including grapheme-aware wrapping.
 * More reliable terminal cleanup on Windows.
+* Fixed a Windows issue where exiting with Ctrl+C could leave the terminal in
+  the alternate screen.
 * Component initialization cleanup so configuration is loaded once and passed
   through instead of reloaded by individual components.
 * Migration to Rust 2024 edition.
