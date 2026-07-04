@@ -49,13 +49,13 @@ pub struct App<S: Store> {
     showing_execution_id: Option<ExecutionId>,
     shell: Option<(String, Vec<String>)>,
     store: S,
-    read_only: bool,
+    lookback_mode: bool,
     disable_mouse: bool,
 }
 
 impl<S: Store> App<S> {
-    pub fn new(cli: Cli, mut store: S, read_only: bool) -> Result<Self> {
-        let runtime_config = if read_only {
+    pub fn new(cli: Cli, mut store: S, lookback_mode: bool) -> Result<Self> {
+        let runtime_config = if lookback_mode {
             let store_runtime_config = store.get_runtime_config()?.unwrap_or_default();
 
             RuntimeConfig {
@@ -125,7 +125,7 @@ impl<S: Store> App<S> {
             diff_mode,
             cli.is_bell,
             cli.is_no_title,
-            read_only,
+            lookback_mode,
             timemachine_mode,
         );
         let fps_counter = cli.is_debug.then(FpsCounter::new);
@@ -141,7 +141,7 @@ impl<S: Store> App<S> {
             home,
             fps_counter,
             should_quit: false,
-            read_only,
+            lookback_mode,
             should_suspend: false,
             config,
             runtime_config,
@@ -179,11 +179,11 @@ impl<S: Store> App<S> {
                 r.exit_code,
             ))?;
         }
-        if self.read_only {
+        if self.lookback_mode {
             action_tx.send(Action::SetTimemachineMode(true))?;
         }
 
-        let executor_handle = if self.read_only {
+        let executor_handle = if self.lookback_mode {
             tokio::spawn(async move {
                 loop {
                     tokio::time::sleep(Duration::seconds(1).to_std().unwrap()).await;
@@ -334,7 +334,7 @@ impl<S: Store> App<S> {
                             action_tx.send(Action::UpdateHistoryResult(id, diff, exit_code))?;
                         }
 
-                        if !self.timemachine_mode && !self.read_only {
+                        if !self.timemachine_mode && !self.lookback_mode {
                             action_tx.send(Action::ShowExecution(id, id))?;
                         }
                     }
