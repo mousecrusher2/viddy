@@ -19,7 +19,7 @@ mod widget;
 
 use clap::Parser;
 use cli::Cli;
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::Result;
 
 use crate::{
     app::App,
@@ -32,13 +32,6 @@ async fn main() -> Result<()> {
     install_eyre_hook()?;
 
     let args = Cli::parse();
-
-    if args.load.is_none() && args.command.is_empty() {
-        return Err(eyre!("No command provided"));
-    }
-    if args.load.is_some() && args.command.len() > 1 {
-        return Err(eyre!("Can not use --load with command"));
-    }
 
     if args.disable_auto_save {
         let store = store::memory::MemoryStore::new();

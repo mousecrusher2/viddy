@@ -108,7 +108,14 @@ pub struct Cli {
     )]
     pub is_bell: bool,
 
-    #[arg(value_name = "COMMAND", num_args(0..), allow_hyphen_values = true, help = "Command to run")]
+    #[arg(
+        value_name = "COMMAND",
+        num_args(1..),
+        allow_hyphen_values = true,
+        required_unless_present = "load",
+        conflicts_with = "load",
+        help = "Command to run"
+    )]
     pub command: Vec<String>,
 
     #[arg(
@@ -166,5 +173,38 @@ fn parse_duration_from_str(s: &str) -> Result<Duration> {
         // If the input is only a number, we assume it's in seconds
         let n = s.parse::<f64>()?;
         Ok(Duration::from_std(StdDuration::try_from_secs_f64(n)?)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser as _;
+
+    use super::*;
+
+    #[test]
+    fn command_is_required_without_load() {
+        assert!(Cli::try_parse_from(["viddy"]).is_err());
+    }
+
+    #[test]
+    fn command_is_allowed_without_load() {
+        let cli = Cli::try_parse_from(["viddy", "echo", "hello"]).unwrap();
+
+        assert_eq!(cli.command, ["echo", "hello"]);
+        assert!(cli.load.is_none());
+    }
+
+    #[test]
+    fn load_allows_missing_command() {
+        let cli = Cli::try_parse_from(["viddy", "--load", "backup.sqlite"]).unwrap();
+
+        assert_eq!(cli.load, Some(PathBuf::from("backup.sqlite")));
+        assert!(cli.command.is_empty());
+    }
+
+    #[test]
+    fn load_conflicts_with_command() {
+        assert!(Cli::try_parse_from(["viddy", "--load", "backup.sqlite", "echo"]).is_err());
     }
 }
