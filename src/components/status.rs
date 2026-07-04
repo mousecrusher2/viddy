@@ -1,7 +1,5 @@
-use color_eyre::eyre::Result;
 use ratatui::{prelude::*, widgets::Paragraph};
 
-use super::{Component, Frame};
 use crate::{
     action::{Action, DiffMode},
     config::Config,
@@ -35,10 +33,8 @@ impl Status {
             read_only,
         }
     }
-}
 
-impl Component for Status {
-    fn update(&mut self, action: &Action, _area: Rect) {
+    pub fn update(&mut self, action: &Action) {
         match *action {
             Action::SetFold(is_fold) => self.is_fold = is_fold,
             Action::SetDiff(diff_mode) => self.diff_mode = diff_mode,
@@ -47,8 +43,10 @@ impl Component for Status {
             _ => {}
         }
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+impl Widget for &Status {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let enabled_style = Style::default().fg(Color::White).bold();
         let disabled_style = self.config.get_style("secondary_text");
 
@@ -97,7 +95,6 @@ impl Component for Status {
 
         let line = Line::raw("").spans(status);
         let paragraph = Paragraph::new(line).alignment(Alignment::Right);
-        f.render_widget(paragraph, area);
-        Ok(())
+        paragraph.render(area, buf);
     }
 }

@@ -1,10 +1,8 @@
 use std::time::Instant;
 
-use color_eyre::eyre::Result;
 use ratatui::{prelude::*, widgets::Block};
 
-use super::Component;
-use crate::{action::Action, tui::Frame};
+use crate::action::Action;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FpsCounter {
@@ -57,18 +55,18 @@ impl FpsCounter {
             self.render_frames = 0;
         }
     }
-}
 
-impl Component for FpsCounter {
-    fn update(&mut self, action: &Action, _area: Rect) {
+    pub fn update(&mut self, action: &Action) {
         match action {
             Action::Tick => self.app_tick(),
             Action::Render => self.render_tick(),
             _ => {}
         }
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, rect: Rect) -> Result<()> {
+impl Widget for &FpsCounter {
+    fn render(self, rect: Rect, buf: &mut Buffer) {
         let rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -84,7 +82,6 @@ impl Component for FpsCounter {
             self.app_fps, self.render_fps
         );
         let block = Block::default().title(Line::from(s.dim()).right_aligned());
-        f.render_widget(block, rect);
-        Ok(())
+        block.render(rect, buf);
     }
 }

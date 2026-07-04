@@ -1,15 +1,14 @@
 use ansi_to_tui::IntoText;
-use color_eyre::eyre::Result;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::{
     buffer::CellWidth as _,
     prelude::*,
-    widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    text::Text as RatatuiText,
+    widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget},
 };
 use symbols::scrollbar;
 use unicode_segmentation::UnicodeSegmentation as _;
 
-use super::{Component, Frame};
 use crate::{
     action::Action,
     config::Config,
@@ -116,6 +115,22 @@ impl ExecutionResult {
     }
 }
 
+fn parse_ansi_or_plain_text(
+    parsed: std::result::Result<RatatuiText<'static>, ansi_to_tui::Error>,
+    plain_text: String,
+) -> RatatuiText<'static> {
+    parsed.unwrap_or_else(|error| {
+        log::warn!("Failed to parse ANSI text for rendering: {error}");
+        RatatuiText::from(plain_text)
+    })
+}
+
+fn ratatui_text(text: &Text) -> RatatuiText<'static> {
+    let ansi_text = text.to_string();
+    let plain_text = text.plain_text();
+    parse_ansi_or_plain_text(ansi_text.into_text(), plain_text)
+}
+
 fn text_width(text: &Text) -> usize {
     text.lines()
         .into_iter()
@@ -178,8 +193,8 @@ fn scroll_metrics(x_max: usize, y_max: usize, area: Rect) -> (Rect, u16, u16) {
     (body, x_scrollable, y_scrollable)
 }
 
-impl Component for ExecutionResult {
-    fn update(&mut self, action: &Action, area: Rect) {
+impl ExecutionResult {
+    pub fn update(&mut self, action: &Action, area: Rect) {
         match *action {
             Action::SetResult(ref result) => self.set_result(result.clone()),
             Action::ResultScrollDown => self.scroll_down(),
@@ -197,26 +212,32 @@ impl Component for ExecutionResult {
             _ => {}
         }
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+pub struct ExecutionResultWidget;
+
+impl StatefulWidget for ExecutionResultWidget {
+    type State = ExecutionResult;
+
+    fn render(self, area: Rect, buf: &mut Buffer, execution_result: &mut Self::State) {
         let empty = Text::default();
-        let text = self.result.as_ref().unwrap_or(&empty);
-        let (current, x_max, y_max) = prepared_text(text, self.fold, area);
-        if self.fold {
-            self.x_position = 0;
+        let text = execution_result.result.as_ref().unwrap_or(&empty);
+        let (current, x_max, y_max) = prepared_text(text, execution_result.fold, area);
+        if execution_result.fold {
+            execution_result.x_position = 0;
         }
 
         let (body, x_scrollable, y_scrollable) = scroll_metrics(x_max, y_max, area);
-        let scroll_style = self.config.get_style("scrollbar");
+        let scroll_style = execution_result.config.get_style("scrollbar");
 
         if y_scrollable > 0 {
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .symbols(scrollbar::VERTICAL)
                 .style(scroll_style)
                 .thumb_symbol("║");
-            let mut scrollbar_state =
-                ScrollbarState::new(y_scrollable.into()).position(self.y_position.into());
-            f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
+            let mut scrollbar_state = ScrollbarState::new(y_scrollable.into())
+                .position(execution_result.y_position.into());
+            scrollbar.render(area, buf, &mut scrollbar_state);
         }
 
         if x_scrollable > 0 {
@@ -224,24 +245,23 @@ impl Component for ExecutionResult {
                 .symbols(scrollbar::HORIZONTAL)
                 .style(scroll_style)
                 .thumb_symbol("=");
-            let mut scrollbar_state =
-                ScrollbarState::new(x_scrollable.into()).position(self.x_position.into());
-            f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
+            let mut scrollbar_state = ScrollbarState::new(x_scrollable.into())
+                .position(execution_result.x_position.into());
+            scrollbar.render(area, buf, &mut scrollbar_state);
         }
 
-        if self.x_position > x_scrollable {
-            self.x_position = x_scrollable;
+        if execution_result.x_position > x_scrollable {
+            execution_result.x_position = x_scrollable;
         }
 
-        if self.y_position > y_scrollable {
-            self.y_position = y_scrollable;
+        if execution_result.y_position > y_scrollable {
+            execution_result.y_position = y_scrollable;
         }
 
-        let current = current.to_string().into_text()?;
-        let paragraph = Paragraph::new(current).scroll((self.y_position, self.x_position));
-        f.render_widget(paragraph, body);
-
-        Ok(())
+        let current = ratatui_text(&current);
+        let paragraph = Paragraph::new(current)
+            .scroll((execution_result.y_position, execution_result.x_position));
+        paragraph.render(body, buf);
     }
 }
 
@@ -390,5 +410,17 @@ use color_eyre::eyre::Result;
         let text = "\u{1b}[31mredtextredtext\u{1b}[0m";
         let result = remove_ansi(text);
         assert_eq!(result, "redtextredtext");
+    }
+
+    #[test]
+    fn test_parse_ansi_fallback_uses_plain_text() {
+        let result = parse_ansi_or_plain_text(
+            Err(ansi_to_tui::Error::NomError("boom".to_string())),
+            "plain text".to_string(),
+        );
+
+        assert_eq!(result.lines.len(), 1);
+        assert_eq!(result.lines[0].spans.len(), 1);
+        assert_eq!(result.lines[0].spans[0].content.as_ref(), "plain text");
     }
 }

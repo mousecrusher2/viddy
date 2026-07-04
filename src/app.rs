@@ -11,7 +11,10 @@ use crate::{
     action::{Action, DiffMode},
     bytes::normalize_stdout,
     cli::Cli,
-    components::{Component, fps::FpsCounter, home::Home},
+    components::{
+        fps::FpsCounter,
+        home::{Home, HomeWidget},
+    },
     config::{Config, RuntimeConfig},
     diff::{diff_and_mark, diff_and_mark_delete},
     mode::Mode,
@@ -28,7 +31,8 @@ pub struct App<S: Store> {
     runtime_config: RuntimeConfig,
     tick_rate: f64,
     frame_rate: f64,
-    components: Vec<Box<dyn Component>>,
+    home: Home,
+    fps_counter: Option<FpsCounter>,
     should_quit: bool,
     should_suspend: bool,
     mode: Mode,
@@ -124,10 +128,7 @@ impl<S: Store> App<S> {
             read_only,
             timemachine_mode,
         );
-        let mut components: Vec<Box<dyn Component>> = vec![Box::new(home)];
-        if cli.is_debug {
-            components.push(Box::new(FpsCounter::new()));
-        }
+        let fps_counter = cli.is_debug.then(FpsCounter::new);
 
         let is_skip_empty_diffs =
             cli.is_skip_empty_diffs || config.general.skip_empty_diffs.unwrap_or_default();
@@ -137,7 +138,8 @@ impl<S: Store> App<S> {
             store,
             tick_rate: 1.0,
             frame_rate: 20.0,
-            components,
+            home,
+            fps_counter,
             should_quit: false,
             read_only,
             should_suspend: false,
@@ -211,9 +213,7 @@ impl<S: Store> App<S> {
         tui = tui.mouse(!self.disable_mouse);
         tui.enter()?;
 
-        for component in &mut self.components {
-            component.register_action_handler(action_tx.clone());
-        }
+        self.home.register_action_handler(action_tx.clone());
 
         loop {
             if let Some(e) = tui.next().await {
@@ -294,25 +294,25 @@ impl<S: Store> App<S> {
                     Action::Resize(w, h) => {
                         tui.resize(Rect::new(0, 0, w, h))?;
                         tui.draw(|f| {
-                            for component in &mut self.components {
-                                let r = component.draw(f, f.area());
-                                if let Err(e) = r {
-                                    action_tx
-                                        .send(Action::Error(format!("Failed to draw: {e:?}")))
-                                        .unwrap();
-                                }
+                            let area = f.area();
+                            f.render_stateful_widget(HomeWidget, area, &mut self.home);
+                            if let Some(position) = self.home.cursor_position(area) {
+                                f.set_cursor_position(position);
+                            }
+                            if let Some(fps_counter) = &self.fps_counter {
+                                f.render_widget(fps_counter, area);
                             }
                         })?;
                     }
                     Action::Render => {
                         tui.draw(|f| {
-                            for component in &mut self.components {
-                                let r = component.draw(f, f.area());
-                                if let Err(e) = r {
-                                    action_tx
-                                        .send(Action::Error(format!("Failed to draw: {e:?}")))
-                                        .unwrap();
-                                }
+                            let area = f.area();
+                            f.render_stateful_widget(HomeWidget, area, &mut self.home);
+                            if let Some(position) = self.home.cursor_position(area) {
+                                f.set_cursor_position(position);
+                            }
+                            if let Some(fps_counter) = &self.fps_counter {
+                                f.render_widget(fps_counter, area);
                             }
                         })?;
                     }
@@ -482,8 +482,9 @@ impl<S: Store> App<S> {
                 }
                 let size = tui.size()?;
                 let area = Rect::new(0, 0, size.width, size.height);
-                for component in &mut self.components {
-                    component.update(&action, area);
+                self.home.update(&action, area);
+                if let Some(fps_counter) = &mut self.fps_counter {
+                    fps_counter.update(&action);
                 }
             }
 

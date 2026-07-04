@@ -5,16 +5,14 @@ use std::{
 };
 
 use chrono::{DateTime, Local};
-use color_eyre::eyre::{Ok, Result};
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders},
+    widgets::{Block, Borders, StatefulWidget},
 };
 use tokio::sync::mpsc::UnboundedSender;
 use tui_widget_list::{ListBuilder, ListState, ListView};
 
-use super::{Component, Frame};
 use crate::{
     action::Action,
     config::{Config, RuntimeConfig},
@@ -48,6 +46,10 @@ impl History {
             runtime_config,
             timemachine_mode: false,
         }
+    }
+
+    pub fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
+        self.command_tx = Some(tx);
     }
 
     fn update_latest_history_count(&self) {
@@ -194,14 +196,8 @@ impl History {
             _ => (),
         }
     }
-}
 
-impl Component for History {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
-        self.command_tx = Some(tx);
-    }
-
-    fn update(&mut self, action: &Action, area: Rect) {
+    pub fn update(&mut self, action: &Action, area: Rect) {
         match *action {
             Action::InsertHistory(id, start_time) => self.insert_history(id, start_time),
             Action::UpdateHistoryResult(id, diff, exit_code) => {
@@ -221,14 +217,20 @@ impl Component for History {
             _ => {}
         }
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+pub struct HistoryWidget;
+
+impl StatefulWidget for HistoryWidget {
+    type State = History;
+
+    fn render(self, area: Rect, buf: &mut Buffer, history: &mut Self::State) {
         let block = Block::default()
             .title("History")
             .borders(Borders::ALL)
-            .border_style(self.config.get_style("border"))
-            .title_style(self.config.get_style("title"));
-        let items = self
+            .border_style(history.config.get_style("border"))
+            .title_style(history.config.get_style("title"));
+        let items = history
             .items
             .iter()
             .map(|i| i.borrow().clone())
@@ -240,8 +242,6 @@ impl Component for History {
         });
         let list = ListView::new(builder, items.len()).block(block);
 
-        f.render_stateful_widget(list, area, &mut self.state);
-
-        Ok(())
+        list.render(area, buf, &mut history.state);
     }
 }

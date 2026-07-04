@@ -1,10 +1,8 @@
-use color_eyre::eyre::Result;
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use super::{Component, Frame};
 use crate::config::{Config, RuntimeConfig};
 
 pub struct Command {
@@ -22,8 +20,8 @@ impl Command {
     }
 }
 
-impl Component for Command {
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+impl Widget for &Command {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::default()
             .title("Command")
             .borders(Borders::ALL)
@@ -31,7 +29,6 @@ impl Component for Command {
             .title_style(self.config.get_style("title"));
         let paragraph = Paragraph::new(self.runtime_config.command.join(" ")).block(block);
 
-        f.render_widget(paragraph, area);
-        Ok(())
+        paragraph.render(area, buf);
     }
 }

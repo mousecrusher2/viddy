@@ -1,10 +1,8 @@
-use color_eyre::eyre::Result;
 use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::Paragraph};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
-use super::{Component, Frame};
 use crate::action::Action;
 
 #[derive(Default)]
@@ -19,6 +17,21 @@ impl Prompt {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
+        self.command_tx = Some(tx);
+    }
+
+    #[must_use]
+    pub fn cursor_position(&self, area: Rect) -> Option<Position> {
+        if !self.is_inputtig {
+            return None;
+        }
+
+        let cursor_offset =
+            u16::try_from(self.input.visual_cursor().saturating_add(1)).unwrap_or(u16::MAX);
+        Some(Position::new(area.x.saturating_add(cursor_offset), area.y))
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
@@ -59,14 +72,8 @@ impl Prompt {
         self.is_inputtig = false;
         self.is_searching = true;
     }
-}
 
-impl Component for Prompt {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
-        self.command_tx = Some(tx);
-    }
-
-    fn update(&mut self, action: &Action, _area: Rect) {
+    pub fn update(&mut self, action: &Action) {
         match *action {
             Action::EnterSearchMode => self.enter_search_mode(),
             Action::KeyEventForPrompt(key_event) => self.handle_key_event(key_event),
@@ -75,22 +82,40 @@ impl Component for Prompt {
             _ => {}
         }
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        if self.is_inputtig {
-            let cursor_offset =
-                u16::try_from(self.input.visual_cursor().saturating_add(1)).unwrap_or(u16::MAX);
-            f.set_cursor_position(Position::new(area.x.saturating_add(cursor_offset), area.y));
-        }
-
+impl Widget for &Prompt {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let input = if self.is_searching {
             format!("/{}", self.input.value())
         } else {
             String::new()
         };
         let paragraph = Paragraph::new(input);
-        f.render_widget(paragraph, area);
+        paragraph.render(area, buf);
+    }
+}
 
-        Ok(())
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::{KeyCode, KeyEvent};
+
+    #[test]
+    fn cursor_position_is_only_returned_while_inputting() {
+        let mut prompt = Prompt {
+            is_inputtig: true,
+            is_searching: true,
+            ..Prompt::default()
+        };
+        prompt.handle_key_event(KeyEvent::from(KeyCode::Char('a')));
+
+        assert_eq!(
+            prompt.cursor_position(Rect::new(2, 3, 10, 1)),
+            Some(Position::new(4, 3))
+        );
+
+        prompt.is_inputtig = false;
+        assert_eq!(prompt.cursor_position(Rect::new(2, 3, 10, 1)), None);
     }
 }

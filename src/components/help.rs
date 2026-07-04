@@ -1,10 +1,11 @@
 use std::{collections::HashMap, fmt::Write as _};
 
-use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use ratatui::{prelude::*, widgets::Paragraph};
+use ratatui::{
+    prelude::*,
+    widgets::{Paragraph, StatefulWidget},
+};
 
-use super::{Component, Frame};
 use crate::{
     action::Action,
     config::{Config, KeyBindings},
@@ -77,6 +78,19 @@ impl Help {
     fn reset_position(&mut self) {
         self.y_position = 0;
     }
+
+    pub fn update(&mut self, action: &Action, area: Rect) {
+        match action {
+            Action::ShowHelp => self.reset_position(),
+            Action::HelpScrollDown => self.scroll_down(),
+            Action::HelpScrollUp => self.scroll_up(),
+            Action::HelpPageDown => self.page_down(area),
+            Action::HelpPageUp => self.page_up(area),
+            Action::HelpHalfPageDown => self.half_page_down(area),
+            Action::HelpHalfPageUp => self.half_page_up(area),
+            _ => {}
+        }
+    }
 }
 
 fn display_key(s: &mut String, key: &KeyEvent) {
@@ -119,21 +133,12 @@ fn display_key(s: &mut String, key: &KeyEvent) {
     }
 }
 
-impl Component for Help {
-    fn update(&mut self, action: &Action, area: Rect) {
-        match action {
-            Action::ShowHelp => self.reset_position(),
-            Action::HelpScrollDown => self.scroll_down(),
-            Action::HelpScrollUp => self.scroll_up(),
-            Action::HelpPageDown => self.page_down(area),
-            Action::HelpPageUp => self.page_up(area),
-            Action::HelpHalfPageDown => self.half_page_down(area),
-            Action::HelpHalfPageUp => self.half_page_up(area),
-            _ => {}
-        }
-    }
+pub struct HelpWidget;
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+impl StatefulWidget for HelpWidget {
+    type State = Help;
+
+    fn render(self, area: Rect, buf: &mut Buffer, help: &mut Self::State) {
         let basic_keys = [
             (
                 "Toggle time machine mode  ",
@@ -292,7 +297,7 @@ impl Component for Help {
         ];
 
         lines.extend(basic_keys.map(|(action, mode, key)| {
-            let keys_str = keys_str(&self.keybindings, mode, key);
+            let keys_str = keys_str(&help.keybindings, mode, key);
             Line::from(
                 [
                     vec![
@@ -314,7 +319,7 @@ impl Component for Help {
         lines.push(Line::from(""));
 
         lines.extend(pager_keys.map(|(description, mode, action)| {
-            let keys_str = keys_str(&self.keybindings, mode, action);
+            let keys_str = keys_str(&help.keybindings, mode, action);
             Line::from(
                 [
                     vec![
@@ -339,7 +344,7 @@ impl Component for Help {
         lines.push(Line::from(""));
 
         lines.extend(timemachine_keys.map(|(action, mode, key)| {
-            let keys_str = keys_str(&self.keybindings, mode, key);
+            let keys_str = keys_str(&help.keybindings, mode, key);
             Line::from(
                 [
                     vec![
@@ -358,12 +363,10 @@ impl Component for Help {
         let area_height: usize = area.height.into();
         let scrollable_height = lines.len().saturating_sub(area_height);
         let max_y_position = u16::try_from(scrollable_height).unwrap_or(u16::MAX);
-        self.y_position = self.y_position.min(max_y_position);
+        help.y_position = help.y_position.min(max_y_position);
 
-        let paragraph = Paragraph::new(Text::from(lines)).scroll((self.y_position, 0));
-        f.render_widget(paragraph, area);
-
-        Ok(())
+        let paragraph = Paragraph::new(Text::from(lines)).scroll((help.y_position, 0));
+        paragraph.render(area, buf);
     }
 }
 

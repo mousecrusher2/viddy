@@ -1,11 +1,9 @@
 use chrono::{DateTime, Local};
-use color_eyre::eyre::Result;
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use super::{Component, Frame};
 use crate::{action::Action, config::Config};
 
 pub struct Clock {
@@ -18,16 +16,16 @@ impl Clock {
     pub fn new(config: Config) -> Self {
         Self { config, time: None }
     }
-}
 
-impl Component for Clock {
-    fn update(&mut self, action: &Action, _area: Rect) {
+    pub fn update(&mut self, action: &Action) {
         if let &Action::SetClock(datetime) = action {
             self.time = Some(datetime);
         }
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+impl Widget for &Clock {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::default()
             .title("Time")
             .borders(Borders::ALL)
@@ -38,7 +36,6 @@ impl Component for Clock {
             .map(|t| t.format("%Y-%m-%d %H:%M:%S").to_string())
             .unwrap_or_default();
         let paragraph = Paragraph::new(text).block(block);
-        f.render_widget(paragraph, area);
-        Ok(())
+        paragraph.render(area, buf);
     }
 }

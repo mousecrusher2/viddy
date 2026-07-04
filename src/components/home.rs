@@ -1,10 +1,18 @@
-use color_eyre::eyre::Result;
-use ratatui::{prelude::*, widgets::Block};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, StatefulWidget, Widget},
+};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{
-    Component, Frame, clock::Clock, command::Command, execution_result::ExecutionResult,
-    help::Help, history::History, interval::Interval, prompt::Prompt, status::Status,
+    clock::Clock,
+    command::Command,
+    execution_result::{ExecutionResult, ExecutionResultWidget},
+    help::{Help, HelpWidget},
+    history::{History, HistoryWidget},
+    interval::Interval,
+    prompt::Prompt,
+    status::Status,
 };
 use crate::{
     action::{Action, DiffMode},
@@ -65,6 +73,11 @@ impl Home {
         self.timemachine_mode = timemachine_mode;
     }
 
+    pub fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
+        self.history_component.register_action_handler(tx.clone());
+        self.prompt_component.register_action_handler(tx);
+    }
+
     fn child_areas(&self, area: Rect) -> (Rect, Rect, Rect, Rect, Rect, Rect, Rect) {
         let header_length = if self.is_no_title { 0 } else { 3 };
         let [header, middle, footer] = Layout::vertical([
@@ -100,22 +113,18 @@ impl Home {
             status,
         )
     }
-}
 
-impl Component for Home {
-    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) {
-        self.command_component.register_action_handler(tx.clone());
-        self.interval_component.register_action_handler(tx.clone());
-        self.clock_component.register_action_handler(tx.clone());
-        self.execution_result_component
-            .register_action_handler(tx.clone());
-        self.history_component.register_action_handler(tx.clone());
-        self.prompt_component.register_action_handler(tx.clone());
-        self.status_component.register_action_handler(tx.clone());
-        self.help_component.register_action_handler(tx);
+    #[must_use]
+    pub fn cursor_position(&self, area: Rect) -> Option<Position> {
+        if self.mode == Mode::Help {
+            return None;
+        }
+
+        let (_, _, _, _, _, prompt, _) = self.child_areas(area);
+        self.prompt_component.cursor_position(prompt)
     }
 
-    fn update(&mut self, action: &Action, area: Rect) {
+    pub fn update(&mut self, action: &Action, area: Rect) {
         match *action {
             Action::SetMode(mode) => self.set_mode(mode),
             Action::SetTimemachineMode(timemachine_mode) => {
@@ -132,7 +141,7 @@ impl Component for Home {
         }
 
         let default_area = Rect::default();
-        let (command, interval, clock, execution_result, history, prompt, status) =
+        let (_command, _interval, _clock, execution_result, history, _prompt, _status) =
             if self.mode == Mode::Help {
                 (
                     default_area,
@@ -152,46 +161,55 @@ impl Component for Home {
             default_area
         };
 
-        self.clock_component.update(action, clock);
-        self.command_component.update(action, command);
-        self.interval_component.update(action, interval);
+        self.clock_component.update(action);
         self.execution_result_component
             .update(action, execution_result);
         self.history_component.update(action, history);
-        self.prompt_component.update(action, prompt);
-        self.status_component.update(action, status);
+        self.prompt_component.update(action);
+        self.status_component.update(action);
         self.help_component.update(action, help);
     }
+}
 
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        f.render_widget(
-            Block::new().style(self.config.get_style("background")),
-            area,
-        );
+pub struct HomeWidget;
 
-        if self.mode == Mode::Help {
-            self.help_component.draw(f, area)?;
+impl StatefulWidget for HomeWidget {
+    type State = Home;
 
-            return Ok(());
+    fn render(self, area: Rect, buf: &mut Buffer, home: &mut Self::State) {
+        Block::new()
+            .style(home.config.get_style("background"))
+            .render(area, buf);
+
+        if home.mode == Mode::Help {
+            HelpWidget.render(area, buf, &mut home.help_component);
+
+            return;
         }
 
         let (command, interval, clock, execution_result, history, prompt, status) =
-            self.child_areas(area);
+            home.child_areas(area);
 
-        self.command_component.draw(f, command)?;
-        self.interval_component.draw(f, interval)?;
-        self.clock_component.draw(f, clock)?;
+        (&home.command_component).render(command, buf);
+        (&home.interval_component).render(interval, buf);
+        (&home.clock_component).render(clock, buf);
 
-        if self.timemachine_mode {
-            self.history_component.draw(f, history)?;
-            self.execution_result_component.draw(f, execution_result)?;
+        if home.timemachine_mode {
+            HistoryWidget.render(history, buf, &mut home.history_component);
+            ExecutionResultWidget.render(
+                execution_result,
+                buf,
+                &mut home.execution_result_component,
+            );
         } else {
-            self.execution_result_component.draw(f, execution_result)?;
+            ExecutionResultWidget.render(
+                execution_result,
+                buf,
+                &mut home.execution_result_component,
+            );
         }
 
-        self.prompt_component.draw(f, prompt)?;
-        self.status_component.draw(f, status)?;
-
-        Ok(())
+        (&home.prompt_component).render(prompt, buf);
+        (&home.status_component).render(status, buf);
     }
 }

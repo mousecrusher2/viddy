@@ -1,11 +1,9 @@
 use chrono::Duration as ChronoDuration;
-use color_eyre::eyre::Result;
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use super::{Component, Frame};
 use crate::config::{Config, RuntimeConfig};
 
 pub struct Interval {
@@ -35,8 +33,8 @@ impl Interval {
     }
 }
 
-impl Component for Interval {
-    fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
+impl Widget for &Interval {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::default()
             .title("Every")
             .borders(Borders::ALL)
@@ -47,7 +45,6 @@ impl Component for Interval {
                 .to_string();
         let paragraph = Paragraph::new(text).block(block);
 
-        f.render_widget(paragraph, area);
-        Ok(())
+        paragraph.render(area, buf);
     }
 }
