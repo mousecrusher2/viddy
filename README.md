@@ -79,6 +79,14 @@ Download from [release page](https://github.com/sachaos/viddy/releases).
 
 ## Install with Other Package Managers (Community-Maintained)
 
+### [pkg.haus](https://pkg.haus)
+
+APT packages for Debian stable, testing and unstable (amd64 and arm64), built from source at release tags. Set up the archive per the instructions on [pkg.haus](https://pkg.haus), then:
+
+```shell
+sudo apt install viddy
+```
+
 ### [MacPorts](https://www.macports.org)
 
 ```shell
